@@ -59,7 +59,6 @@ public class SwaggerConfig {
 	 */
 	private Predicate<String> producerPaths() {
 		// Match all paths except /error
-		// return Predicates.and(PathSelectors.regex("/consumer.*"), PathSelectors.regex("/consumer.*"), PathSelectors.regex("/producer.*"), Predicates.not(PathSelectors.regex("/error.*")));
 		return Predicates.and(PathSelectors.regex("/producer.*"), Predicates.not(PathSelectors.regex("/error.*")));
 	}
 

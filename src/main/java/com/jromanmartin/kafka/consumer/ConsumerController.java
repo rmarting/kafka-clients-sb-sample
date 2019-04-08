@@ -12,6 +12,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -41,17 +42,19 @@ public class ConsumerController {
 	@Autowired
 	private ApplicationContext applicationContext;
 
+	@Value("${consumer.poolTimeout:10}")
+	private Long poolTimeout;
+
 	@ApiOperation(value = "Get a list of records from a topic", response = CustomMessageList.class)
 	@ApiResponses(value = { 
-		@ApiResponse(code = 200, message = "Customer Details Retrieved", response = CustomMessageList.class),
-		@ApiResponse(code = 500, message = "Internal Server Error"),
-		@ApiResponse(code = 404, message = "Customer not found") })
+		@ApiResponse(code = 200, message = "List of records from topic", response = CustomMessageList.class),
+		@ApiResponse(code = 404, message = "Not records in topic"),
+		@ApiResponse(code = 500, message = "Internal Server Error") })
 	@GetMapping(value = "/kafka/{topicName}", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<CustomMessageList> pollFromTopic(
 			@ApiParam(name = "topicName", value = "Topic Name") @PathVariable String topicName, 
-			@ApiParam(name = "size", value = "Number of messages to consume") @RequestParam Integer size,
-			@ApiParam(name = "commit", value = "Commit message consumed") @RequestParam(defaultValue = "true") boolean commit, 
-			@ApiParam(name = "partition", value = "Partition number") @RequestParam(required = false) Integer partition) {
+			@ApiParam(name = "commit", value = "Commit messages consumed") @RequestParam(defaultValue = "true") boolean commit,
+			@ApiParam(name = "partition", value = "Topic Partition number", example = "0") @RequestParam(required = false) Integer partition) {
 		int messageFound = 0;
 		List<ConsumerRecord<Long, CustomMessage>> records = new ArrayList<>();
 		CustomMessageList response = new CustomMessageList();
@@ -64,30 +67,34 @@ public class ConsumerController {
 			if (null != partition) {
 				TopicPartition topicPartition = new TopicPartition(topicName, partition);
 				consumer.assign(Collections.singletonList(topicPartition));
+
+				LOGGER.info("Consumer assigned to topic {} and partition {}", topicName, partition);
 			} else {
 				// Subscribe to Topic
 				consumer.subscribe(Collections.singletonList(topicName));
+
+				LOGGER.info("Consumer subscribed to topic {}", topicName);
 			}
 
-			LOGGER.info("Consumer registered to topic {}", topicName);
+			LOGGER.info("Polling records from topic {}", topicName);
 
-			while (messageFound < size) {
-				ConsumerRecords<Long, CustomMessage> consumerRecords = consumer.poll(Duration.ofSeconds(1));
-				// 1000 is the time in milliseconds consumer will wait if no record is found at broker.
+			ConsumerRecords<Long, CustomMessage> consumerRecords = consumer.poll(Duration.ofSeconds(poolTimeout));
 
-				if (consumerRecords.isEmpty()) {
-					break;
-				}
-				messageFound++;
+			LOGGER.info("Polled #{} records from topic {}", consumerRecords.count(), topicName);
 
-				consumerRecords.forEach(record -> {
-					records.add(record);
-				});
-			}
+			consumerRecords.forEach(record -> {
+				// Record Metadata
+				record.value().setOffset(record.offset());
+				record.value().setPartition(record.partition());
+
+				records.add(record);
+			});
 
 			// Commit consumption
 			if (Boolean.valueOf(commit)) {
 				consumer.commitAsync();
+
+				LOGGER.info("Records committed in topic {} from consumer", topicName);
 			}
 		} finally {
 			consumer.close();

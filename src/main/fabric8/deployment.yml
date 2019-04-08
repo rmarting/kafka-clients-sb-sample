@@ -1,0 +1,32 @@
+metadata:
+  name: ${project.artifactId}
+  labels:
+    group: ${project.groupId}
+    project: ${project.artifactId}
+    version: ${project.version}
+    provider: fabric8
+spec:
+  template:
+    spec:
+      containers:
+        -
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /actuator/health
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 180
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /actuator/health
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1

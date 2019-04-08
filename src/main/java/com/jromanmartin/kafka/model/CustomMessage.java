@@ -8,13 +8,13 @@ public class CustomMessage implements Serializable {
 
 	private static final long serialVersionUID = 1305278483346223763L;
 
-	@ApiModelProperty(notes = "Key to identify this message", position = 0, required = false)
+	@ApiModelProperty(notes = "Key to identify this message", position = 0, required = false, example = "1")
 	private Long key;
 
 	@ApiModelProperty(notes = "Timestamp", position = 1, readOnly = true)
-	private String timestamp;
+	private long timestamp;
 	
-	@ApiModelProperty(notes = "Content", position = 2, required = true)
+	@ApiModelProperty(notes = "Content", position = 2, required = true, example = "Simple message")
 	private String content;
 
 	@ApiModelProperty(notes = "Partition number", position = 3, required = false, readOnly = true)
@@ -31,11 +31,11 @@ public class CustomMessage implements Serializable {
 		this.key = key;
 	}
 
-	public String getTimestamp() {
+	public long getTimestamp() {
 		return timestamp;
 	}
 
-	public void setTimestamp(String timestamp) {
+	public void setTimestamp(long timestamp) {
 		this.timestamp = timestamp;
 	}
 

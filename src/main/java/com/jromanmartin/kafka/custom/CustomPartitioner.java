@@ -12,7 +12,7 @@ public class CustomPartitioner implements Partitioner {
 	
 	private final static Logger LOGGER = LoggerFactory.getLogger(CustomPartitioner.class);
 
-	private static final int PARTITION_COUNT = 6;
+	private static final int PARTITION_COUNT = 3;
 
 	@Override
 	public void configure(Map<String, ?> configs) {

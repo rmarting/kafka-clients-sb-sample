@@ -39,7 +39,7 @@ public class ProducerController {
 	
 	@ApiOperation(value = "Send a message synchronously", response = CustomMessage.class)
     @ApiResponses(value = {
-		@ApiResponse(code = 200, message = "Customer Details Retrieved", response = String.class),
+		@ApiResponse(code = 200, message = "Message sent", response = String.class, responseContainer = "Custom Message with extra information"),
 		@ApiResponse(code = 404, message = "Message not sent"),
    		@ApiResponse(code = 500, message = "Internal Server Error")   		
 	})	
@@ -47,31 +47,21 @@ public class ProducerController {
 	public ResponseEntity<CustomMessage> sendToTopic(
 			@ApiParam(name = "topicName", value = "Topic Name") @PathVariable String topicName, 
 			@ApiParam(name = "message", value = "Message") @RequestBody CustomMessage message) {
-		SimpleDateFormat sdf = new SimpleDateFormat("dd/mm/yyyy HH:mm:ss");
-
 		// Prepare message
-		message.setTimestamp(sdf.format(System.currentTimeMillis()));
+		message.setTimestamp(System.currentTimeMillis());
 		
-		// Record with a String as value
-		// ProducerRecord<Long, String> record = null;
 		// Record with a CustomMessage as value
 		ProducerRecord<Long, CustomMessage> record = null;
 
 		if (null == message.getKey()) {
-			// Value as String
-			// record = new ProducerRecord<>(topicName, message.getContent() + " " + sdf.format(System.currentTimeMillis()));
 			// Value as CustomMessage
 			record = new ProducerRecord<>(topicName, message);
 		} else {
-			// Value as String
-			// record = new ProducerRecord<>(topicName, message.getKey(),
-			// 		message.getContent() + " " + sdf.format(System.currentTimeMillis()));
 			// Value as CustomMessage
 			record = new ProducerRecord<>(topicName, message.getKey(), message);
 		}
 
 		// Producer
-		// Producer<Long, String> producer = applicationContext.getBean(Producer.class);
 		Producer<Long, CustomMessage> producer = applicationContext.getBean(Producer.class);
 		RecordMetadata metadata = null;
 		try {			
@@ -91,14 +81,12 @@ public class ProducerController {
 			producer.close();
 		}
 
-		//return ResponseEntity.ok(String.format("Record sent to partition '%s' with offset '%s'\n", metadata.partition(),
-		//		metadata.offset()));
 		return ResponseEntity.ok(message);
 	}
 
 	@ApiOperation(value = "Send a message asynchronously", response = CustomMessage.class)
     @ApiResponses(value = {
-		@ApiResponse(code = 200, message = "Customer Details Retrieved", response = String.class),
+		@ApiResponse(code = 200, message = "Message sent", response = String.class, responseContainer = "Custom Message with extra information"),
 		@ApiResponse(code = 404, message = "Message not sent"),
    		@ApiResponse(code = 500, message = "Internal Server Error")   		
 	})	
@@ -106,31 +94,21 @@ public class ProducerController {
 	public ResponseEntity<CustomMessage> sendToTopicAsync(
 			@ApiParam(name = "topicName", value = "Topic Name") @PathVariable String topicName, 
 			@ApiParam(name = "message", value = "Message") @RequestBody CustomMessage message) {
-		SimpleDateFormat sdf = new SimpleDateFormat("dd/mm/yyyy HH:mm:ss");
-
 		// Prepare message
-		message.setTimestamp(sdf.format(System.currentTimeMillis()));
+		message.setTimestamp(System.currentTimeMillis());
 
-		// Record with a String as value
-		// ProducerRecord<Long, String> record = null;
 		// Record with a CustomMessage as value
 		ProducerRecord<Long, CustomMessage> record = null;
 
 		if (null == message.getKey()) {
-			// Value as String
-			// record = new ProducerRecord<>(topicName, message.getContent() + " " + sdf.format(System.currentTimeMillis()));
 			// Value as CustomMessage
 			record = new ProducerRecord<>(topicName, message);
 		} else {
-			// Value as String
-			// record = new ProducerRecord<>(topicName, message.getKey(),
-			//	message.getContent() + " " + sdf.format(System.currentTimeMillis()));
 			// Value as CustomMessage
 			record = new ProducerRecord<>(topicName, message.getKey(), message);
 		}
 
 		// Producer
-		// Producer<Long, String> producer = applicationContext.getBean(Producer.class);
 		Producer<Long, CustomMessage> producer = applicationContext.getBean(Producer.class);
 		
 		try {			
@@ -150,7 +128,6 @@ public class ProducerController {
 			producer.close();
 		}
 
-		// return ResponseEntity.ok(String.format("Record sent to partition asynchronous\n"));
 		return ResponseEntity.ok(message);
 	}	
 	
