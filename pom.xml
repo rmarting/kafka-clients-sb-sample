@@ -21,7 +21,7 @@
 		<!-- Kafka Clients -->
 		<kafka-clients.version>2.2.0</kafka-clients.version><!-- 2.1.1.redhat-00002 -->
 		<!-- Jackson -->
-		<jackson.version>2.9.8</jackson.version>
+		<jackson.version>2.9.9</jackson.version>
 		<!-- Springfox Swagger2-->
 		<springfox-swagger2.version>2.9.2</springfox-swagger2.version>
 	</properties>
