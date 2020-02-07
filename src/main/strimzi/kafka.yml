@@ -1,16 +1,10 @@
-apiVersion: kafka.strimzi.io/v1alpha1
+apiVersion: kafka.strimzi.io/v1beta1
 kind: Kafka
 metadata:
   labels:
     app: my-kafka
   name: my-kafka
 spec:
-  entityOperator:
-    tlsSidecar: {}
-    topicOperator:
-      reconciliationIntervalSeconds: 60
-    userOperator:
-      reconciliationIntervalSeconds: 60
   kafka:
     config:
       # default replication factors for automatically created topics
@@ -18,7 +12,7 @@ spec:
       # The default number of log partitions per topic
       num.partitions: 3
       # Enable auto creation of topic on the server
-      auto.create.topics.enable: true
+      auto.create.topics.enable: false
       # When a producer sets acks to "all" (or "-1"), min.insync.replicas specifies the minimum number of replicas that
       # must acknowledge a write for the write to be considered successful.
       # When used together, min.insync.replicas and acks allow you to enforce greater durability guarantees. A typical
@@ -30,10 +24,10 @@ spec:
       # For anything other than development testing, a value greater than 1 is recommended for to ensure availability such as 3.
       offsets.topic.replication.factor: 3
       transaction.state.log.replication.factor: 3
-      transaction.state.log.min.isr: 3
+      transaction.state.log.min.isr: 2
       # The minimum age of a log file to be eligible for deletion due to age. Default value: 168
       # The number of hours to keep a log file before deleting it (in hours), tertiary to log.retention.ms property
-      log.retention.hours: 168
+      log.retention.hours: 48
       # The default cleanup policy for segments beyond the retention window. A comma separated list of valid policies.
       # Valid policies are: "delete" and "compact". Default value: "delete"
       log.cleanup.policy: delete
@@ -46,6 +40,13 @@ spec:
     jvmOptions:
       -Xms: 2g
       -Xmx: 2g
+    resources:
+      requests:
+        cpu: 2000m
+        memory: 4Gi
+      limits:
+        cpu: 2000m
+        memory: 4Gi
     listeners:
       plain: {}
       tls: {}
@@ -53,15 +54,109 @@ spec:
       initialDelaySeconds: 90
       timeoutSeconds: 5
     metrics:
-      lowercaseOutputLabelNames: false
-      lowercaseOutputName: false
+      # Inspired by config from Kafka 2.0.0 example rules:
+      # https://github.com/prometheus/jmx_exporter/blob/master/example_configs/kafka-2_0_0.yml
+      lowercaseOutputName: true
+      rules:
+        # Special cases and very specific rules
+        - pattern : kafka.server<type=(.+), name=(.+), clientId=(.+), topic=(.+), partition=(.*)><>Value
+          name: kafka_server_$1_$2
+          type: GAUGE
+          labels:
+            clientId: "$3"
+            topic: "$4"
+            partition: "$5"
+        - pattern : kafka.server<type=(.+), name=(.+), clientId=(.+), brokerHost=(.+), brokerPort=(.+)><>Value
+          name: kafka_server_$1_$2
+          type: GAUGE
+          labels:
+            clientId: "$3"
+            broker: "$4:$5"
+        # Some percent metrics use MeanRate attribute
+        # Ex) kafka.server<type=(KafkaRequestHandlerPool), name=(RequestHandlerAvgIdlePercent)><>MeanRate
+        - pattern: kafka.(\w+)<type=(.+), name=(.+)Percent\w*><>MeanRate
+          name: kafka_$1_$2_$3_percent
+          type: GAUGE
+        # Generic gauges for percents
+        - pattern: kafka.(\w+)<type=(.+), name=(.+)Percent\w*><>Value
+          name: kafka_$1_$2_$3_percent
+          type: GAUGE
+        - pattern: kafka.(\w+)<type=(.+), name=(.+)Percent\w*, (.+)=(.+)><>Value
+          name: kafka_$1_$2_$3_percent
+          type: GAUGE
+          labels:
+            "$4": "$5"
+        # Generic per-second counters with 0-2 key/value pairs
+        - pattern: kafka.(\w+)<type=(.+), name=(.+)PerSec\w*, (.+)=(.+), (.+)=(.+)><>Count
+          name: kafka_$1_$2_$3_total
+          type: COUNTER
+          labels:
+            "$4": "$5"
+            "$6": "$7"
+        - pattern: kafka.(\w+)<type=(.+), name=(.+)PerSec\w*, (.+)=(.+)><>Count
+          name: kafka_$1_$2_$3_total
+          type: COUNTER
+          labels:
+            "$4": "$5"
+        - pattern: kafka.(\w+)<type=(.+), name=(.+)PerSec\w*><>Count
+          name: kafka_$1_$2_$3_total
+          type: COUNTER
+        # Generic gauges with 0-2 key/value pairs
+        - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.+), (.+)=(.+)><>Value
+          name: kafka_$1_$2_$3
+          type: GAUGE
+          labels:
+            "$4": "$5"
+            "$6": "$7"
+        - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.+)><>Value
+          name: kafka_$1_$2_$3
+          type: GAUGE
+          labels:
+            "$4": "$5"
+        - pattern: kafka.(\w+)<type=(.+), name=(.+)><>Value
+          name: kafka_$1_$2_$3
+          type: GAUGE
+        # Emulate Prometheus 'Summary' metrics for the exported 'Histogram's.
+        # Note that these are missing the '_sum' metric!
+        - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.+), (.+)=(.+)><>Count
+          name: kafka_$1_$2_$3_count
+          type: COUNTER
+          labels:
+            "$4": "$5"
+            "$6": "$7"
+        - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.*), (.+)=(.+)><>(\d+)thPercentile
+          name: kafka_$1_$2_$3
+          type: GAUGE
+          labels:
+            "$4": "$5"
+            "$6": "$7"
+            quantile: "0.$8"
+        - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.+)><>Count
+          name: kafka_$1_$2_$3_count
+          type: COUNTER
+          labels:
+            "$4": "$5"
+        - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.*)><>(\d+)thPercentile
+          name: kafka_$1_$2_$3
+          type: GAUGE
+          labels:
+            "$4": "$5"
+            quantile: "0.$6"
+        - pattern: kafka.(\w+)<type=(.+), name=(.+)><>Count
+          name: kafka_$1_$2_$3_count
+          type: COUNTER
+        - pattern: kafka.(\w+)<type=(.+), name=(.+)><>(\d+)thPercentile
+          name: kafka_$1_$2_$3
+          type: GAUGE
+          labels:
+            quantile: "0.$4"
     readinessProbe:
       initialDelaySeconds: 60
       timeoutSeconds: 5
     replicas: 3
     storage:
       deleteClaim: true
-      size: 20Gi
+      size: 10Gi
       type: persistent-claim
     template:
       pod:
@@ -71,14 +166,45 @@ spec:
           terminationGracePeriodSeconds: 120
   zookeeper:
     jvmOptions:
-      -Xms: 512m
+      -Xms: 1g
       -Xmx: 1g
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 2G
+      limits:
+        cpu: 1000m
+        memory: 2G
     livenessProbe:
       initialDelaySeconds: 90
       timeoutSeconds: 5
     metrics:
-      lowercaseOutputLabelNames: false
-      lowercaseOutputName: false
+      # Inspired by Zookeeper rules
+      # https://github.com/prometheus/jmx_exporter/blob/master/example_configs/zookeeper.yaml
+      lowercaseOutputName: true
+      rules:
+        # replicated Zookeeper
+        - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+)><>(\\w+)"
+          name: "zookeeper_$2"
+        - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+)><>(\\w+)"
+          name: "zookeeper_$3"
+          labels:
+            replicaId: "$2"
+        - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+), name2=(\\w+)><>(\\w+)"
+          name: "zookeeper_$4"
+          labels:
+            replicaId: "$2"
+            memberType: "$3"
+        - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+), name2=(\\w+), name3=(\\w+)><>(\\w+)"
+          name: "zookeeper_$4_$5"
+          labels:
+            replicaId: "$2"
+            memberType: "$3"
+        # standalone Zookeeper
+        - pattern: "org.apache.ZooKeeperService<name0=StandaloneServer_port(\\d+)><>(\\w+)"
+          name: "zookeeper_$2"
+        - pattern: "org.apache.ZooKeeperService<name0=StandaloneServer_port(\\d+), name1=(InMemoryDataTree)><>(\\w+)"
+          name: "zookeeper_$2_$3"
     readinessProbe:
       initialDelaySeconds: 60
       timeoutSeconds: 5
@@ -87,3 +213,25 @@ spec:
       deleteClaim: true
       size: 10Gi
       type: persistent-claim
+  entityOperator:
+    topicOperator:
+      reconciliationIntervalSeconds: 60
+      resources:
+        requests:
+          cpu: 100m
+          memory: 512M
+        limits:
+          cpu: 1000m
+          memory: 1G
+    userOperator:
+      reconciliationIntervalSeconds: 60
+      resources:
+        requests:
+          cpu: 100m
+          memory: 512M
+        limits:
+          cpu: 1000m
+          memory: 1G
+  kafkaExporter:
+    topicRegex: ".*"
+    groupRegex: ".*"
