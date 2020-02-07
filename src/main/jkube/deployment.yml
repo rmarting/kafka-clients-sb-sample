@@ -4,13 +4,12 @@ metadata:
     group: ${project.groupId}
     project: ${project.artifactId}
     version: ${project.version}
-    provider: fabric8
+    provider: jkube
 spec:
   template:
     spec:
       containers:
-        -
-          livenessProbe:
+        - livenessProbe:
             failureThreshold: 3
             httpGet:
               path: /actuator/health
