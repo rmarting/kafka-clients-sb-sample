@@ -159,13 +159,13 @@ The most common parameters for some operations:
 
 Model:
 
-```json
+```text
 CustomMessage {
-    key (integer, optional): Key to identify this message ,
-    timestamp (string, optional, read only): Timestamp ,
-    content (string): Content ,
-    partition (integer, optional, read only): Partition number ,
-    offset (integer, optional, read only): Offset in the partition
+  key (integer, optional): Key to identify this message,
+  timestamp (string, optional, read only): Timestamp,
+  content (string): Content,
+  partition (integer, optional, read only): Partition number,
+  offset (integer, optional, read only): Offset in the partition
 }
 ```
 
