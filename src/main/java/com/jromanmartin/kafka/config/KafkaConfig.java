@@ -1,9 +1,8 @@
 package com.jromanmartin.kafka.config;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.Properties;
-
+import com.jromanmartin.kafka.custom.CustomDeserializer;
+import com.jromanmartin.kafka.custom.CustomSerializer;
+import com.jromanmartin.kafka.model.CustomMessage;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -12,18 +11,33 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.LongSerializer;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
+import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.support.serializer.JsonDeserializer;
 
-import com.jromanmartin.kafka.custom.CustomDeserializer;
-import com.jromanmartin.kafka.custom.CustomPartitioner;
-import com.jromanmartin.kafka.custom.CustomSerializer;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Map;
+import java.util.Properties;
 
 @Configuration
-public class KafkaConfig implements KafkaConstants {
+public class KafkaConfig {
+
+	public static Integer MESSAGE_COUNT=1000;
+
+	public static String OFFSET_RESET_LATEST="latest";
+
+	public static String OFFSET_RESET_EARLIER="earliest";
+
+	public static Integer MAX_POLL_RECORDS=1;
 	
 	@Value("${kafka.bootstrap-servers}")
 	private String kafkaBrokers;
@@ -118,5 +132,26 @@ public class KafkaConfig implements KafkaConstants {
 				
 		return consumer;
 	}
-	
+
+	@Bean
+	public ConsumerFactory<String, CustomMessage> consumerFactory(KafkaProperties kafkaProperties) {
+		Map<String, Object> consumerProperties = kafkaProperties.buildConsumerProperties();
+
+		return new DefaultKafkaConsumerFactory<>(
+				consumerProperties,
+				new StringDeserializer(),
+				new JsonDeserializer<>(CustomMessage.class));
+	}
+
+	@Bean
+	public ConcurrentKafkaListenerContainerFactory<String, CustomMessage> kafkaListenerContainerFactory(KafkaProperties kafkaProperties) {
+		ConcurrentKafkaListenerContainerFactory<String, CustomMessage> factory = new ConcurrentKafkaListenerContainerFactory<>();
+
+		factory.setConsumerFactory(consumerFactory(kafkaProperties));
+		// Enable batch processing in listeners
+		// factory.setBatchListener(true);
+
+		return factory;
+	}
+
 }

@@ -1,16 +1,16 @@
 package com.jromanmartin.kafka.model;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-
-import io.swagger.annotations.ApiModelProperty;
 
 public class CustomMessageList implements Serializable {
 
     private static final long serialVersionUID = 138669946178014325L;
     
-    @ApiModelProperty(notes = "List of messages", position = 0, required = false)
+    @Schema(description = "List of messages", required = false)
 	private List<CustomMessage> list = new ArrayList<>();
 
     /**

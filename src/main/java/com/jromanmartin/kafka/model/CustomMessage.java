@@ -1,26 +1,26 @@
 package com.jromanmartin.kafka.model;
 
-import java.io.Serializable;
+import io.swagger.v3.oas.annotations.media.Schema;
 
-import io.swagger.annotations.ApiModelProperty;
+import java.io.Serializable;
 
 public class CustomMessage implements Serializable {
 
 	private static final long serialVersionUID = 1305278483346223763L;
 
-	@ApiModelProperty(notes = "Key to identify this message", position = 0, required = false, example = "1")
+	@Schema(description = "Key to identify this message.", required = false, example = "1")
 	private Long key;
 
-	@ApiModelProperty(notes = "Timestamp", position = 1, readOnly = true)
+	@Schema(description = "Timestamp.", required = true)
 	private long timestamp;
 	
-	@ApiModelProperty(notes = "Content", position = 2, required = true, example = "Simple message")
+	@Schema(description = "Content.", required = true, example = "Simple message")
 	private String content;
 
-	@ApiModelProperty(notes = "Partition number", position = 3, required = false, readOnly = true)
+	@Schema(description = "Partition number.", required = false, readOnly = true)
 	private int partition;
 
-	@ApiModelProperty(notes = "Offset in the partition", position = 4, required = false, readOnly = true)
+	@Schema(description = "Offset in the partition.", required = false, readOnly = true)
 	private long offset;
 	
 	public Long getKey() {

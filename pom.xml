@@ -19,9 +19,9 @@
 		<!-- Kafka Clients -->
 		<kafka-clients.version>2.3.0.redhat-00003</kafka-clients.version>
 		<!-- Jackson -->
-		<jackson.version>2.9.10</jackson.version>
-		<!-- Springfox Swagger2-->
-		<springfox-swagger2.version>2.9.2</springfox-swagger2.version>
+		<jackson.version>2.10.2</jackson.version>
+		<!-- Swagger -->
+		<springdoc-openapi-ui.version>1.2.30</springdoc-openapi-ui.version>
 	</properties>
 
 	<dependencies>
@@ -34,6 +34,12 @@
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
 
+		<!-- Spring Kafka -->
+		<dependency>
+			<groupId>org.springframework.kafka</groupId>
+			<artifactId>spring-kafka</artifactId>
+		</dependency>
+
 		<!-- Kafka Clients -->
 		<dependency>
 			<groupId>org.apache.kafka</groupId>
@@ -44,26 +50,39 @@
 		<!-- Jackson Libraries -->
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
+			<artifactId>jackson-annotations</artifactId>
 			<version>${jackson.version}</version>
 		</dependency>
 
-		<!-- Swagger -->
+		<!-- OpenApi -->
 		<dependency>
-			<groupId>io.springfox</groupId>
-			<artifactId>springfox-swagger2</artifactId>
-			<version>${springfox-swagger2.version}</version>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-ui</artifactId>
+			<version>${springdoc-openapi-ui.version}</version>
 		</dependency>
+
+		<!-- hot reload - press Ctrl+F9 in IntelliJ after a code change while application is running -->
 		<dependency>
-			<groupId>io.springfox</groupId>
-			<artifactId>springfox-swagger-ui</artifactId>
-			<version>${springfox-swagger2.version}</version>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+			<optional>true</optional>
 		</dependency>
 
 		<!-- Test Dependencies -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>org.junit.vintage</groupId>
+					<artifactId>junit-vintage-engine</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.kafka</groupId>
+			<artifactId>spring-kafka-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

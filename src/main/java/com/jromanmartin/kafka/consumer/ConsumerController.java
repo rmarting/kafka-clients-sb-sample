@@ -1,10 +1,14 @@
 package com.jromanmartin.kafka.consumer;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
+import com.jromanmartin.kafka.model.CustomMessage;
+import com.jromanmartin.kafka.model.CustomMessageList;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -17,24 +21,16 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
-import com.jromanmartin.kafka.model.CustomMessage;
-import com.jromanmartin.kafka.model.CustomMessageList;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-
-@Controller
+@RestController
 @RequestMapping("/consumer")
-@Api(value = "/consumer", description = "Operations to consume messages from a Kafka Cluster")
+@Tag(name = "consumer", description = "Operations to consume messages from a Kafka Cluster")
 public class ConsumerController {
 
 	private final static Logger LOGGER = LoggerFactory.getLogger(ConsumerController.class);
@@ -45,16 +41,19 @@ public class ConsumerController {
 	@Value("${consumer.poolTimeout:10}")
 	private Long poolTimeout;
 
-	@ApiOperation(value = "Get a list of records from a topic", response = CustomMessageList.class)
-	@ApiResponses(value = { 
-		@ApiResponse(code = 200, message = "List of records from topic", response = CustomMessageList.class),
-		@ApiResponse(code = 404, message = "Not records in topic"),
-		@ApiResponse(code = 500, message = "Internal Server Error") })
+	@Operation(summary = "Get a list of records from a topic", tags = { "consumer" })
+	@ApiResponses(value = {
+		@ApiResponse(
+				responseCode = "200",
+				description = "List of records from topic",
+				content = @Content(schema = @Schema(implementation = CustomMessageList.class))),
+		@ApiResponse(responseCode = "404", description = "Not records in topic"),
+		@ApiResponse(responseCode = "500", description = "Internal Server Error") })
 	@GetMapping(value = "/kafka/{topicName}", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<CustomMessageList> pollFromTopic(
-			@ApiParam(name = "topicName", value = "Topic Name") @PathVariable String topicName, 
-			@ApiParam(name = "commit", value = "Commit messages consumed") @RequestParam(defaultValue = "true") boolean commit,
-			@ApiParam(name = "partition", value = "Topic Partition number", example = "0") @RequestParam(required = false) Integer partition) {
+			@Parameter(description = "Topic name", required = true) @PathVariable String topicName,
+			@Parameter(description = "Commit results", required = false) @RequestParam(defaultValue = "true") boolean commit,
+			@Parameter(description = "Partition ID", required = false) @RequestParam(required = false) Integer partition) {
 		int messageFound = 0;
 		List<ConsumerRecord<Long, CustomMessage>> records = new ArrayList<>();
 		CustomMessageList response = new CustomMessageList();

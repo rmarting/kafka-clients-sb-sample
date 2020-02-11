@@ -1,35 +1,30 @@
 package com.jromanmartin.kafka.producer;
 
-import java.text.SimpleDateFormat;
-import java.util.concurrent.ExecutionException;
-
 import com.jromanmartin.kafka.model.CustomMessage;
-
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import java.util.concurrent.ExecutionException;
 
-@Controller
+@RestController
 @RequestMapping("/producer")
-@Api(value = "producer", description = "Operations to produce messages to a Kafka Cluster")
+@Tag(name = "producer", description = "Operations to produce messages to a Kafka Cluster")
 public class ProducerController {
 	
 	private final static Logger LOGGER = LoggerFactory.getLogger(ProducerController.class);
@@ -37,16 +32,19 @@ public class ProducerController {
 	@Autowired
 	private ApplicationContext applicationContext;
 	
-	@ApiOperation(value = "Send a message synchronously", response = CustomMessage.class)
+	@Operation(summary = "Send a message synchronously", tags = { "producer"})
     @ApiResponses(value = {
-		@ApiResponse(code = 200, message = "Message sent", response = String.class, responseContainer = "Custom Message with extra information"),
-		@ApiResponse(code = 404, message = "Message not sent"),
-   		@ApiResponse(code = 500, message = "Internal Server Error")   		
-	})	
+		@ApiResponse(
+				responseCode = "200",
+				description = "Message sent",
+				content = @Content(schema = @Schema(implementation = CustomMessage.class))),
+		@ApiResponse(responseCode = "404", description = "Message not sent"),
+   		@ApiResponse(responseCode = "500", description = "Internal Server Error")
+	})
 	@PostMapping(value = "/kafka/{topicName}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<CustomMessage> sendToTopic(
-			@ApiParam(name = "topicName", value = "Topic Name") @PathVariable String topicName, 
-			@ApiParam(name = "message", value = "Message") @RequestBody CustomMessage message) {
+			@Parameter(description = "Topic name", required = true) @PathVariable String topicName,
+			@Parameter(description = "Message to send", required = true) @RequestBody CustomMessage message) {
 		// Prepare message
 		message.setTimestamp(System.currentTimeMillis());
 		
@@ -84,16 +82,19 @@ public class ProducerController {
 		return ResponseEntity.ok(message);
 	}
 
-	@ApiOperation(value = "Send a message asynchronously", response = CustomMessage.class)
-    @ApiResponses(value = {
-		@ApiResponse(code = 200, message = "Message sent", response = String.class, responseContainer = "Custom Message with extra information"),
-		@ApiResponse(code = 404, message = "Message not sent"),
-   		@ApiResponse(code = 500, message = "Internal Server Error")   		
-	})	
+	@Operation(summary = "Send a message asynchronously", tags = { "producer"})
+	@ApiResponses(value = {
+			@ApiResponse(
+					responseCode = "200",
+					description = "Message sent",
+					content = @Content(schema = @Schema(implementation = CustomMessage.class))),
+			@ApiResponse(responseCode = "404", description = "Message not sent"),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error")
+	})
 	@PostMapping(value = "/kafka/async/{topicName}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<CustomMessage> sendToTopicAsync(
-			@ApiParam(name = "topicName", value = "Topic Name") @PathVariable String topicName, 
-			@ApiParam(name = "message", value = "Message") @RequestBody CustomMessage message) {
+			@Parameter(description = "Topic name", required = true) @PathVariable String topicName,
+			@Parameter(description = "Topic name", required = true) @RequestBody CustomMessage message) {
 		// Prepare message
 		message.setTimestamp(System.currentTimeMillis());
 

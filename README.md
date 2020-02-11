@@ -49,15 +49,19 @@ kafka.kafka.strimzi.io/my-kafka created
 To deploy the Kafka Topic in Kubernetes:
 
 ```bash
-$ kubectl apply -f src/main/strimzi/kafkatopic.yml -n <NAMESPACE>
-kafkatopic.kafka.strimzi.io/my-topic created
+$ kubectl apply -f src/main/strimzi/kafkatopic-one-topic.yml
+kafkatopic.kafka.strimzi.io/one-topic created
+$ kubectl apply -f src/main/strimzi/kafkatopic-another-topic.yml
+kafkatopic.kafka.strimzi.io/another-topic created
 ```
 
 In OpenShift:
 
 ```bash
-$ oc apply -f src/main/strimzi/kafkatopic.yml -n <NAMESPACE>
-kafkatopic.kafka.strimzi.io/my-topic created
+$ oc apply -f src/main/strimzi/kafkatopic-one-topic.yml
+kafkatopic.kafka.strimzi.io/one-topic created
+$ oc apply -f src/main/strimzi/kafkatopic-another-topic.yml
+kafkatopic.kafka.strimzi.io/another-topic created
 ```
 
 After some minutes Kafka Cluster will be deployed:
@@ -172,7 +176,7 @@ CustomMessage {
 Simple Sample:
 
 ```bash
-$ curl -X POST http://$(oc get route kafka-clients-sb-sample -o jsonpath='{.spec.host}')/producer/kafka/my-topic \
+$ curl -X POST http://$(oc get route kafka-clients-sb-sample -o jsonpath='{.spec.host}')/producer/kafka/one-topic \
 -H "Content-Type:application/json" -d '{"content": "Simple message"}' | jq
 {
   "key": null,
@@ -200,7 +204,7 @@ The most common parameters for some operations:
 Simple Sample:
 
 ```bash
-$ curl -v "http://$(oc get route kafka-clients-sb-sample -o jsonpath='{.spec.host}')/consumer/kafka/my-topic?commit=true&partition=2" | jq
+$ curl -v "http://$(oc get route kafka-clients-sb-sample -o jsonpath='{.spec.host}')/consumer/kafka/one-topic?commit=true&partition=2" | jq
 {
   "customMessages": [
     {
