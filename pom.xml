@@ -105,8 +105,8 @@
 				<plugins>
 					<plugin>
 						<groupId>org.eclipse.jkube</groupId>
-						<artifactId>oc-maven-plugin</artifactId>
-						<version>0.2.0</version>
+						<artifactId>openshift-maven-plugin</artifactId>
+						<version>1.0.0-rc-1</version>
 					</plugin>
 				</plugins>
 			</build>
@@ -117,8 +117,8 @@
 				<plugins>
 					<plugin>
 						<groupId>org.eclipse.jkube</groupId>
-						<artifactId>k8s-maven-plugin</artifactId>
-						<version>0.2.0</version>
+						<artifactId>kubernetes-maven-plugin</artifactId>
+						<version>1.0.0-rc-1</version>
 					</plugin>
 				</plugins>
 			</build>
