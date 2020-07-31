@@ -6,7 +6,10 @@ metadata:
   name: my-kafka
 spec:
   kafka:
+    version: 2.5.0
     config:
+      # Log message format
+      log.message.format.version: "2.5"
       # default replication factors for automatically created topics
       default.replication.factor: 3
       # The default number of log partitions per topic
@@ -37,16 +40,6 @@ spec:
       log.cleaner.enable: true
       # How long are delete records retained?. Default value: 86400000 (24 hours)
       log.cleaner.delete.retention.ms: 86400000
-    jvmOptions:
-      -Xms: 2g
-      -Xmx: 2g
-    resources:
-      requests:
-        cpu: 2000m
-        memory: 4Gi
-      limits:
-        cpu: 2000m
-        memory: 4Gi
     listeners:
       plain: {}
       tls: {}
@@ -155,9 +148,16 @@ spec:
       timeoutSeconds: 5
     replicas: 3
     storage:
-      deleteClaim: true
-      size: 10Gi
-      type: persistent-claim
+      type: jbod
+      volumes:
+        - id: 0
+          type: persistent-claim
+          size: 25Gi
+          deleteClaim: true
+        - id: 1
+          type: persistent-claim
+          size: 25Gi
+          deleteClaim: true
     template:
       pod:
         metadata:
@@ -165,16 +165,6 @@ spec:
             custom-strimzi-label: my-kafka
           terminationGracePeriodSeconds: 120
   zookeeper:
-    jvmOptions:
-      -Xms: 1g
-      -Xmx: 1g
-    resources:
-      requests:
-        cpu: 1000m
-        memory: 2G
-      limits:
-        cpu: 1000m
-        memory: 2G
     livenessProbe:
       initialDelaySeconds: 90
       timeoutSeconds: 5
@@ -186,25 +176,37 @@ spec:
         # replicated Zookeeper
         - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+)><>(\\w+)"
           name: "zookeeper_$2"
+          type: GAUGE
         - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+)><>(\\w+)"
           name: "zookeeper_$3"
+          type: GAUGE
           labels:
             replicaId: "$2"
+        - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+), name2=(\\w+)><>(Packets.*)"
+          name: "zookeeper_$4"
+          type: COUNTER
+          labels:
+            replicaId: "$2"
+            memberType: "$3"
         - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+), name2=(\\w+)><>(\\w+)"
           name: "zookeeper_$4"
+          type: GAUGE
           labels:
             replicaId: "$2"
             memberType: "$3"
         - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+), name2=(\\w+), name3=(\\w+)><>(\\w+)"
           name: "zookeeper_$4_$5"
+          type: GAUGE
           labels:
             replicaId: "$2"
             memberType: "$3"
         # standalone Zookeeper
         - pattern: "org.apache.ZooKeeperService<name0=StandaloneServer_port(\\d+)><>(\\w+)"
+          type: GAUGE
           name: "zookeeper_$2"
-        - pattern: "org.apache.ZooKeeperService<name0=StandaloneServer_port(\\d+), name1=(InMemoryDataTree)><>(\\w+)"
-          name: "zookeeper_$2_$3"
+        - pattern: "org.apache.ZooKeeperService<name0=StandaloneServer_port(\\d+), name1=InMemoryDataTree><>(\\w+)"
+          type: GAUGE
+          name: "zookeeper_$2"
     readinessProbe:
       initialDelaySeconds: 60
       timeoutSeconds: 5
@@ -216,22 +218,8 @@ spec:
   entityOperator:
     topicOperator:
       reconciliationIntervalSeconds: 60
-      resources:
-        requests:
-          cpu: 100m
-          memory: 512M
-        limits:
-          cpu: 1000m
-          memory: 1G
     userOperator:
       reconciliationIntervalSeconds: 60
-      resources:
-        requests:
-          cpu: 100m
-          memory: 512M
-        limits:
-          cpu: 1000m
-          memory: 1G
   kafkaExporter:
     topicRegex: ".*"
     groupRegex: ".*"
