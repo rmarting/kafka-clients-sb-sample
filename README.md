@@ -19,6 +19,10 @@ one of the following resources to deploy locally a Kubernetes and OpenShift Clus
 
 * [Red Hat Container Development Kit - deploy and run an OpenShift 3.X cluster locally](https://developers.redhat.com/products/cdk/overview/)  
 * [Red Hat CodeReady Containers - OpenShift 4 on your Laptop](https://github.com/code-ready/crc)
+* [Minikube - Running Kubernetes Locally](https://kubernetes.io/docs/setup/minikube/)
+
+> Note: in older versions of Minikube you may hit an [issue](https://github.com/kubernetes/minikube/issues/8330)
+> with Persistent Volume Claims stuck in Pending status
 
 ### Deploying Kafka
 
@@ -52,6 +56,12 @@ $ kubectl apply -f src/main/strimzi/kafka.yml -n amq-streams
 kafka.kafka.strimzi.io/my-kafka created
 ```
 
+To deploy the Kafka Cluster in Minikube or single node cluster:
+```bash
+$ kubectl apply -f src/main/strimzi/kafka-single.yml -n amq-streams
+kafka.kafka.strimzi.io/my-kafka created
+```
+
 In OpenShift:
 
 ```bash
@@ -65,6 +75,15 @@ To deploy the Kafka Topic in Kubernetes:
 $ kubectl apply -f src/main/strimzi/kafkatopic-one-topic.yml -n amq-streams
 kafkatopic.kafka.strimzi.io/one-topic created
 $ kubectl apply -f src/main/strimzi/kafkatopic-another-topic.yml -n amq-streams
+kafkatopic.kafka.strimzi.io/another-topic created
+```
+
+To deploy the Kafka Topic in Minikube or single node cluster:
+
+```bash
+$ kubectl apply -f src/main/strimzi/kafkatopic-one-topic-single.yml -n amq-streams
+kafkatopic.kafka.strimzi.io/one-topic created
+$ kubectl apply -f src/main/strimzi/kafkatopic-another-topic-single.yml -n amq-streams
 kafkatopic.kafka.strimzi.io/another-topic created
 ```
 
@@ -95,7 +114,7 @@ strimzi-cluster-operator-c8d786dcb-8rt9v       1/1     Running   2          5d
 
 # Build and Deploy
 
-Before to build the application it is needed to set up some values in ```src/main/resources/application.properties``` file.
+Before we build the application we need to set up some values in ```src/main/resources/application.properties``` file.
 
 Review and set up the right values from your Kafka Cluster 
 
@@ -124,7 +143,7 @@ Or you can deploy into Kubernetes or OpenShift platform using [Eclipse JKube](ht
 To deploy the application in Kubernetes:
 
 ```bash
-$ mvn k8s:resource k8s:build k8s:apply -Pkubernetes -Djkube.build.strategy=jib
+$ mvn k8s:resource k8s:build k8s:push k8s:apply -Pkubernetes -Djkube.build.strategy=jib
 ```
 
 To deploy the application in OpenShift:
@@ -133,6 +152,12 @@ To deploy the application in OpenShift:
 $ mvn oc:resource oc:build oc:apply -Popenshift
 ```
 
+To deploy the application in Minikube:
+
+```bash
+$ eval $(minikube docker-env)
+$ mvn k8s:resource k8s:build k8s:apply -Pkubernetes
+```
 # REST API
 
 REST API is available from a Swagger UI at:
@@ -200,6 +225,13 @@ $ curl -X POST http://$(oc get route kafka-clients-sb-sample -o jsonpath='{.spec
 }
 ```
 
+With Minikube:
+
+```shell script
+$ curl $(minikube ip):$(kubectl get svc kafka-clients-sb-sample -n amq-streams -o jsonpath='{.spec.ports[].nodePort}')/producer/kafka/one-topic -H "Content-Type:application/json" -d '{"content": "Simple message from Minikube"}'
+{"key":null,"timestamp":1596203271368,"content":"Simple message from Minikube","partition":0,"offset":4}
+```
+
 ## Consumer REST API
 
 Sample REST API to consume messages from a Kafka Topic.
@@ -237,4 +269,11 @@ $ curl -v "http://$(oc get route kafka-clients-sb-sample -o jsonpath='{.spec.hos
     }
   ]
 }
+```
+
+With Minikube:
+
+```shell script
+$ curl $(minikube ip):$(kubectl get svc kafka-clients-sb-sample -n amq-streams -o jsonpath='{.spec.ports[].nodePort}')"/consumer/kafka/one-topic?commit=true&partition=0"
+{"customMessages":[{"key":null,"timestamp":1596203271368,"content":"Simple message from Minikube","partition":0,"offset":4}]}
 ```
