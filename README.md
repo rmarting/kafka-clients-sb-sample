@@ -17,57 +17,70 @@ This project only uses [Kafka Producer API](https://kafka.apache.org/documentati
 This project requires a Kubernetes or OpenShift platform available. If you do not have one, you could use 
 one of the following resources to deploy locally a Kubernetes and OpenShift Cluster:
 
-* [minishift - run OpenShift locally](https://github.com/minishift/minishift)
-* [Red Hat Container Development Kit](https://developers.redhat.com/products/cdk/overview/)  
-* [minikube - Running Kubernetes Locally](https://kubernetes.io/docs/setup/minikube/)
+* [Red Hat Container Development Kit - deploy and run an OpenShift 3.X cluster locally](https://developers.redhat.com/products/cdk/overview/)  
+* [Red Hat CodeReady Containers - OpenShift 4 on your Laptop](https://github.com/code-ready/crc)
 
 ### Deploying Kafka
 
 Strimzi includes a set of Kubernetes Operators to deploy Apache Kafka Clusters on Kubernetes and OpenShift platform.
 
-You can follow the instructions from [Community Documentation](https://strimzi.io/docs/latest/#downloads-str) or you
-could use my [Ansible Playbook](https://github.com/rmarting/strimzi-ansible-playbook) to do it. In both cases it is 
-very easy to do it.
+You can follow the instructions from [Community Documentation](https://strimzi.io/docs/operators/latest/deploying.html)
+or you could use my [Ansible Playbook](https://github.com/rmarting/strimzi-ansible-playbook) to do it. In both cases
+it is very easy to do it.
 
 ```src/main/strimzi``` folder includes a set of custom resource definitions to deploy a Kafka Cluster
-and a Kafka Topic using the Strimzi Operators.
+and some Kafka Topics using the Strimzi Operators.
+
+To deploy Kafka and the rest of the resources, we will create a new namespace in the cluster as:
+
+In Kubernetes:
+
+```bash
+kubectl create namespace amq-streams
+```
+
+In OpenShift:
+
+```bash
+oc new-project amq-streams
+```
 
 To deploy the Kafka Cluster in Kubernetes:
 
 ```bash
-$ kubectl apply -f src/main/strimzi/kafka.yml -n <NAMESPACE>
+$ kubectl apply -f src/main/strimzi/kafka.yml -n amq-streams
 kafka.kafka.strimzi.io/my-kafka created
 ```
 
 In OpenShift:
 
 ```bash
-$ oc apply -f src/main/strimzi/kafka.yml -n <NAMESPACE>
+$ oc apply -f src/main/strimzi/kafka.yml -n amq-streams
 kafka.kafka.strimzi.io/my-kafka created
 ```
 
 To deploy the Kafka Topic in Kubernetes:
 
 ```bash
-$ kubectl apply -f src/main/strimzi/kafkatopic-one-topic.yml
+$ kubectl apply -f src/main/strimzi/kafkatopic-one-topic.yml -n amq-streams
 kafkatopic.kafka.strimzi.io/one-topic created
-$ kubectl apply -f src/main/strimzi/kafkatopic-another-topic.yml
+$ kubectl apply -f src/main/strimzi/kafkatopic-another-topic.yml -n amq-streams
 kafkatopic.kafka.strimzi.io/another-topic created
 ```
 
 In OpenShift:
 
 ```bash
-$ oc apply -f src/main/strimzi/kafkatopic-one-topic.yml
+$ oc apply -f src/main/strimzi/kafkatopic-one-topic.yml -n amq-streams
 kafkatopic.kafka.strimzi.io/one-topic created
-$ oc apply -f src/main/strimzi/kafkatopic-another-topic.yml
+$ oc apply -f src/main/strimzi/kafkatopic-another-topic.yml -n amq-streams
 kafkatopic.kafka.strimzi.io/another-topic created
 ```
 
 After some minutes Kafka Cluster will be deployed:
 
 ```bash
-$ kubectl get pod
+$ kubectl get pod -n amq-streams
 NAME                                           READY   STATUS    RESTARTS   AGE
 my-kafka-entity-operator-8474bb6769-xqzt9      3/3     Running   0          1m
 my-kafka-kafka-0                               2/2     Running   0          2m
@@ -86,9 +99,9 @@ Before to build the application it is needed to set up some values in ```src/mai
 
 Review and set up the right values from your Kafka Cluster 
 
-* Kafka Bootstrap Servers: Kafka brokers are defined by a Kubernetes and OpenShift service created by Strimzi when the Kafka 
-cluster is deployed. This service, called *cluster-name*-kafka-boostrap exposes 9092 port for plain traffic and 9093 
-for encrypted traffic. 
+* Kafka Bootstrap Servers: Kafka brokers are defined by a Kubernetes and OpenShift service created by Strimzi when
+the Kafka cluster is deployed. This service, called *cluster-name*-kafka-bootstrap exposes 9092 port for plain
+traffic and 9093 for encrypted traffic. 
 
 ```text
 kafka.bootstrap-servers=my-kafka-kafka-bootstrap=9092
@@ -111,13 +124,13 @@ Or you can deploy into Kubernetes or OpenShift platform using [Eclipse JKube](ht
 To deploy the application in Kubernetes:
 
 ```bash
-$ mvn k8s:build k8s:resource k8s:deploy -Pkubernetes
+$ mvn k8s:resource k8s:build k8s:apply -Pkubernetes -Djkube.build.strategy=jib
 ```
 
 To deploy the application in OpenShift:
 
 ```bash
-$ mvn oc:build oc:resource oc:deploy -Popenshift
+$ mvn oc:resource oc:build oc:apply -Popenshift
 ```
 
 # REST API
@@ -143,7 +156,7 @@ In OpenShift:
 $ oc get route kafka-clients-sb-sample -o jsonpath='{.spec.host}'
 ```
 
-There is two groups to manage a topic from a Kafka Cluster.
+There are two groups to manage a topic from a Kafka Cluster.
 
 * **Producer**: Send messages to a topic 
 * **Consumer**: Consume messages from a topic
