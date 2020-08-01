@@ -22,6 +22,8 @@
 		<jackson.version>2.11.1</jackson.version>
 		<!-- Swagger -->
 		<springdoc-openapi-ui.version>1.4.3</springdoc-openapi-ui.version>
+		<jkube.namespace>amq-streams</jkube.namespace>
+		<jkube.enricher.jkube-service.type>NodePort</jkube.enricher.jkube-service.type>
 	</properties>
 
 	<dependencies>
