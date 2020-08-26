@@ -1,33 +1,39 @@
 package com.jromanmartin.kafka.config;
 
-import com.jromanmartin.kafka.custom.CustomDeserializer;
-import com.jromanmartin.kafka.custom.CustomSerializer;
-import com.jromanmartin.kafka.model.CustomMessage;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.LongDeserializer;
-import org.apache.kafka.common.serialization.LongSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Scope;
+import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
-import org.springframework.kafka.support.serializer.JsonDeserializer;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.ProducerFactory;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.Map;
-import java.util.Properties;
+import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig;
+import io.confluent.kafka.serializers.KafkaAvroDeserializer;
+import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
+import io.confluent.kafka.serializers.KafkaAvroSerializer;
+import io.confluent.kafka.serializers.subject.RecordNameStrategy;
+import io.confluent.kafka.serializers.subject.TopicRecordNameStrategy;
 
+@EnableKafka
 @Configuration
 public class KafkaConfig {
 
@@ -57,6 +63,12 @@ public class KafkaConfig {
 	@Value("${consumer.offsetReset:earliest}")
 	private String offsetReset;
 
+	@Value("${registry.url}")
+	private String registryUrl;
+
+	@Autowired
+	private KafkaProperties kafkaProperties;
+
 	private String getHostname() {
 		try {
 			return InetAddress.getLocalHost().getHostName();
@@ -65,16 +77,14 @@ public class KafkaConfig {
 		}
 	}
 
-	@Bean
-	@Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-	public Producer<Long, String> createProducer() {
-		Properties props = new Properties();
 
+	@Bean
+	public Map<String, Object> producerConfigs() {
+		Map<String, Object> props = new HashMap<>(kafkaProperties.buildProducerProperties());
 		props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBrokers);
 
-		props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, LongSerializer.class.getName());
-		//props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-		props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, CustomSerializer.class.getName());
+		props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+		props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
 
 		// Allow to define a custom partitioner class
 		// props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, CustomPartitioner.class.getName());
@@ -82,13 +92,32 @@ public class KafkaConfig {
 		// Acknowledgement
 		props.put(ProducerConfig.ACKS_CONFIG, acks);
 
-		return new KafkaProducer<>(props);
+		// Schema registry
+		props.put(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
+		props.put(AbstractKafkaAvroSerDeConfig.AUTO_REGISTER_SCHEMAS, true); // <--------------
+		props.put(AbstractKafkaAvroSerDeConfig.VALUE_SUBJECT_NAME_STRATEGY, RecordNameStrategy.class);
+
+		return props;
 	}
-	
+
 	@Bean
-	@Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-	public Consumer<Long, String> createConsumer() {
-		Properties props = new Properties();
+	public ProducerFactory<String, SpecificRecord> producerFactory() {
+			return new DefaultKafkaProducerFactory<>(producerConfigs());
+	}
+
+	@Bean
+	public Producer<String, SpecificRecord> createProducer() {
+		return producerFactory().createProducer();
+	}
+
+	@Bean
+	public KafkaTemplate<String, SpecificRecord> kafkaTemplate() {
+			return new KafkaTemplate<>(producerFactory());
+	}
+
+	@Bean
+	public Map<String, Object> consumerConfigs() {
+		Map<String, Object> props = new HashMap<>(kafkaProperties.buildProducerProperties());
 
 		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBrokers);
 
@@ -107,16 +136,15 @@ public class KafkaConfig {
 		 */
 		props.put(ConsumerConfig.CLIENT_ID_CONFIG, clientId + getHostname());
 
-		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class.getName());
-		// props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, CustomDeserializer.class.getName());
+		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class);
 
 		// Pool size
 		props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPoolRecords);
 
 		/*
 		 * If true the consumer's offset will be periodically committed in the background.
-		 * Disabled to allow commit or not under some circunstances
+		 * Disabled to allow commit or not under some circumstances
 		 */
 		props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
 
@@ -128,30 +156,35 @@ public class KafkaConfig {
 		 */
 		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, offsetReset);
 
-		Consumer<Long, String> consumer = new KafkaConsumer<>(props);
-				
-		return consumer;
+		// Schema registry
+		props.put(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
+		props.put(AbstractKafkaAvroSerDeConfig.AUTO_REGISTER_SCHEMAS, true);
+		props.put(AbstractKafkaAvroSerDeConfig.VALUE_SUBJECT_NAME_STRATEGY, TopicRecordNameStrategy.class);
+		props.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, true);
+		// props.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, false);
+
+		return props;
 	}
 
 	@Bean
-	public ConsumerFactory<String, CustomMessage> consumerFactory(KafkaProperties kafkaProperties) {
-		Map<String, Object> consumerProperties = kafkaProperties.buildConsumerProperties();
-
-		return new DefaultKafkaConsumerFactory<>(
-				consumerProperties,
-				new StringDeserializer(),
-				new JsonDeserializer<>(CustomMessage.class));
+	public ConsumerFactory<String, GenericRecord> consumerFactory() {
+		return new DefaultKafkaConsumerFactory<>(consumerConfigs());
 	}
 
 	@Bean
-	public ConcurrentKafkaListenerContainerFactory<String, CustomMessage> kafkaListenerContainerFactory(KafkaProperties kafkaProperties) {
-		ConcurrentKafkaListenerContainerFactory<String, CustomMessage> factory = new ConcurrentKafkaListenerContainerFactory<>();
+	public ConcurrentKafkaListenerContainerFactory<String, GenericRecord> kafkaListenerContainerFactory() {
+		ConcurrentKafkaListenerContainerFactory<String, GenericRecord> factory = new ConcurrentKafkaListenerContainerFactory<>();
 
-		factory.setConsumerFactory(consumerFactory(kafkaProperties));
+		factory.setConsumerFactory(consumerFactory());
 		// Enable batch processing in listeners
 		// factory.setBatchListener(true);
 
 		return factory;
+	}
+
+	@Bean
+	public Consumer<String, GenericRecord> createConsumer() {
+		return consumerFactory().createConsumer();
 	}
 
 }

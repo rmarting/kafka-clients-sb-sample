@@ -1,6 +1,8 @@
 package com.jromanmartin.kafka.producer;
 
 import com.jromanmartin.kafka.model.CustomMessage;
+import com.jromanmartin.kafka.schema.CustomAvroMessage;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -8,6 +10,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+
+import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -17,7 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.concurrent.ExecutionException;
@@ -49,18 +52,27 @@ public class ProducerController {
 		message.setTimestamp(System.currentTimeMillis());
 		
 		// Record with a CustomMessage as value
-		ProducerRecord<Long, CustomMessage> record = null;
+		ProducerRecord<String, SpecificRecord> record = null;
+
+		CustomAvroMessage cam = new CustomAvroMessage();
+		cam.setKey(message.getKey());
+		cam.setOffset(message.getOffset());
+		cam.setPartition(message.getPartition());
+		cam.setTimestamp(message.getTimestamp());
+		cam.setContent(message.getContent());
+
 
 		if (null == message.getKey()) {
 			// Value as CustomMessage
-			record = new ProducerRecord<>(topicName, message);
+			record = new ProducerRecord<>(topicName, cam);
 		} else {
 			// Value as CustomMessage
-			record = new ProducerRecord<>(topicName, message.getKey(), message);
+			record = new ProducerRecord<>(topicName, String.valueOf(cam.getKey()), cam);
 		}
 
 		// Producer
-		Producer<Long, CustomMessage> producer = applicationContext.getBean(Producer.class);
+		Producer<String, SpecificRecord> producer = applicationContext.getBean(Producer.class);
+
 		RecordMetadata metadata = null;
 		try {			
 			metadata = producer.send(record).get();
@@ -74,6 +86,9 @@ public class ProducerController {
 			LOGGER.warn("Execution Error in sending record", e);
 		} catch (InterruptedException e) {
 			LOGGER.warn("Interrupted Error in sending record", e);
+		} 
+		catch (Exception e) {
+			LOGGER.error("ERROR", e);
 		} finally {
 			producer.flush();
 			producer.close();
@@ -99,18 +114,25 @@ public class ProducerController {
 		message.setTimestamp(System.currentTimeMillis());
 
 		// Record with a CustomMessage as value
-		ProducerRecord<Long, CustomMessage> record = null;
+		ProducerRecord<String, CustomAvroMessage> record = null;
+
+		CustomAvroMessage cam = new CustomAvroMessage();
+		cam.setKey(message.getKey());
+		cam.setOffset(message.getOffset());
+		cam.setPartition(message.getPartition());
+		cam.setTimestamp(message.getTimestamp());
+		cam.setContent(message.getContent());
 
 		if (null == message.getKey()) {
 			// Value as CustomMessage
-			record = new ProducerRecord<>(topicName, message);
+			record = new ProducerRecord<>(topicName, cam);
 		} else {
 			// Value as CustomMessage
-			record = new ProducerRecord<>(topicName, message.getKey(), message);
+			record = new ProducerRecord<>(topicName, String.valueOf(cam.getKey()), cam);
 		}
 
 		// Producer
-		Producer<Long, CustomMessage> producer = applicationContext.getBean(Producer.class);
+		Producer<String, CustomAvroMessage> producer = applicationContext.getBean(Producer.class);
 		
 		try {			
 			producer.send(record, (metadata, exception) -> {
@@ -124,7 +146,10 @@ public class ProducerController {
 					LOGGER.warn("Unable to put record into topic", exception);
 				}
 			});		
-		} finally {
+		} 
+		catch (Exception e) {
+			System.out.println(e.getMessage());
+		}	finally {
 			producer.flush();
 			producer.close();
 		}

@@ -1,0 +1,33 @@
+{
+  "name": "CustomAvroMessage",
+  "type": "record",
+  "namespace": "com.jromanmartin.kafka.schema",
+  "version": "1",
+  "fields": [
+    {
+      "name": "key",
+      "type": "long",
+      "doc": "Key to identify this message."
+    },
+    {
+      "name": "timestamp",
+      "type": "long",
+      "doc": "Timestamp."
+    },
+    {
+      "name": "content",
+      "type": "string",
+      "doc": "Content."
+    },
+    {
+      "name": "partition",
+      "type": "int",
+      "doc": "Partition number."
+    },
+    {
+      "name": "offset",
+      "type": "long",
+      "doc": "Offset in the partition."
+    }
+  ]
+}

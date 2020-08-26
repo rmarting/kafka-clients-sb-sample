@@ -2,6 +2,8 @@ package com.jromanmartin.kafka.consumer;
 
 import com.jromanmartin.kafka.model.CustomMessage;
 import com.jromanmartin.kafka.model.CustomMessageList;
+import com.jromanmartin.kafka.schema.CustomAvroMessage;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -55,11 +57,11 @@ public class ConsumerController {
 			@Parameter(description = "Commit results", required = false) @RequestParam(defaultValue = "true") boolean commit,
 			@Parameter(description = "Partition ID", required = false) @RequestParam(required = false) Integer partition) {
 		int messageFound = 0;
-		List<ConsumerRecord<Long, CustomMessage>> records = new ArrayList<>();
+		List<ConsumerRecord<String, CustomAvroMessage>> records = new ArrayList<>();
 		CustomMessageList response = new CustomMessageList();
 
 		@SuppressWarnings("unchecked")
-		Consumer<Long, CustomMessage> consumer = applicationContext.getBean(Consumer.class);
+		Consumer<String, CustomAvroMessage> consumer = applicationContext.getBean(Consumer.class);
 
 		try {
 			// Assign to partition defined
@@ -77,17 +79,17 @@ public class ConsumerController {
 
 			LOGGER.info("Polling records from topic {}", topicName);
 
-			ConsumerRecords<Long, CustomMessage> consumerRecords = consumer.poll(Duration.ofSeconds(poolTimeout));
+			ConsumerRecords<String, CustomAvroMessage> consumerRecords = consumer.poll(Duration.ofSeconds(poolTimeout));
 
 			LOGGER.info("Polled #{} records from topic {}", consumerRecords.count(), topicName);
 
-			consumerRecords.forEach(record -> {
+			for (ConsumerRecord<String, CustomAvroMessage> record : records) {
 				// Record Metadata
 				record.value().setOffset(record.offset());
 				record.value().setPartition(record.partition());
 
 				records.add(record);
-			});
+			}
 
 			// Commit consumption
 			if (Boolean.valueOf(commit)) {
@@ -105,7 +107,8 @@ public class ConsumerController {
 		}
 
 		records.forEach(record -> {
-			response.addCustomMessage(record.value());
+			CustomMessage customMessage = new CustomMessage(record.value());
+			response.addCustomMessage(customMessage);
 		});
 
 		return ResponseEntity.ok(response);

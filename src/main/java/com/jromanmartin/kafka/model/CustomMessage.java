@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.io.Serializable;
 
+import com.jromanmartin.kafka.schema.CustomAvroMessage;
+
 public class CustomMessage implements Serializable {
 
 	private static final long serialVersionUID = 1305278483346223763L;
@@ -22,6 +24,19 @@ public class CustomMessage implements Serializable {
 
 	@Schema(description = "Offset in the partition.", required = false, readOnly = true)
 	private long offset;
+
+	public CustomMessage() {
+
+	}
+
+	public CustomMessage(CustomAvroMessage avroMsg) {
+		super();
+		this.key = avroMsg.getKey();
+		this.content = avroMsg.getContent().toString();
+		this.offset = avroMsg.getOffset();
+		this.partition = avroMsg.getPartition();
+		this.timestamp = avroMsg.getTimestamp();
+	}
 	
 	public Long getKey() {
 		return key;
