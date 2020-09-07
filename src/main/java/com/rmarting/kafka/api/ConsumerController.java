@@ -1,7 +1,5 @@
 package com.rmarting.kafka.api;
 
-//import com.jromanmartin.kafka.dto.CustomMessage;
-//import com.jromanmartin.kafka.dto.CustomMessageList;
 import com.rmarting.kafka.dto.MessageDTO;
 import com.rmarting.kafka.dto.MessageListDTO;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,7 +32,7 @@ import java.util.List;
 @Tag(name = "consumer", description = "Operations to consume messages from a Kafka Cluster")
 public class ConsumerController {
 
-	private final static Logger LOGGER = LoggerFactory.getLogger(ConsumerController.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ConsumerController.class);
 
 	private ApplicationContext applicationContext;
 
@@ -58,8 +56,6 @@ public class ConsumerController {
 			@Parameter(description = "Topic name", required = true) @PathVariable String topicName,
 			@Parameter(description = "Commit results", required = false) @RequestParam(defaultValue = "true") boolean commit,
 			@Parameter(description = "Partition ID", required = false) @RequestParam(required = false) Integer partition) {
-
-		int messageFound = 0;
 
 		// API Response
 		MessageListDTO response = new MessageListDTO();
@@ -96,7 +92,7 @@ public class ConsumerController {
 				messageDTO.setTimestamp((Long) record.value().get("timestamp"));
 				messageDTO.setContent(record.value().get("content").toString());
 				// Record Metadata
-				messageDTO.setKey((null != record.key() ? record.key().toString() : null));
+				messageDTO.setKey((null != record.key() ? record.key() : null));
 				messageDTO.setPartition(record.partition());
 				messageDTO.setOffset(record.offset());
 				messageDTO.setTimestamp(record.timestamp());
@@ -105,7 +101,7 @@ public class ConsumerController {
 			});
 
 			// Commit consumption
-			if (Boolean.valueOf(commit)) {
+			if (commit) {
 				consumer.commitAsync();
 
 				LOGGER.info("Records committed in topic {} from consumer", topicName);

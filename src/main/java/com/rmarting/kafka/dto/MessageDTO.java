@@ -17,10 +17,10 @@ public class MessageDTO implements Serializable {
 	@Schema(description = "Content.", required = true, example = "Simple message")
 	private String content;
 
-	@Schema(description = "Partition number.", required = false, readOnly = true)
+	@Schema(description = "Partition number.", required = false, accessMode = Schema.AccessMode.READ_ONLY)
 	private int partition;
 
-	@Schema(description = "Offset in the partition.", required = false, readOnly = true)
+	@Schema(description = "Offset in the partition.", required = false, accessMode = Schema.AccessMode.READ_ONLY)
 	private long offset;
 	
 	public String getKey() {

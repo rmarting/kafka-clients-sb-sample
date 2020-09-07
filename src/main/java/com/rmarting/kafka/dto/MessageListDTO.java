@@ -29,7 +29,7 @@ public class MessageListDTO implements Serializable {
 
     public void addCustomMessage(MessageDTO messageDTO) {
         if (null == list) {
-            list = new ArrayList<MessageDTO>();
+            list = new ArrayList<>();
         }
         list.add(messageDTO);
     }

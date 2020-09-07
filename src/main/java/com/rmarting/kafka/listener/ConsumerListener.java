@@ -14,7 +14,7 @@ import java.util.Map;
 @Component
 public class ConsumerListener {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(ConsumerListener.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConsumerListener.class);
 
     @KafkaListener(topics = {"messages"})
     public void handleMessages(@Payload GenericRecord message, @Headers Map<String, Object> headers) {
@@ -23,7 +23,7 @@ public class ConsumerListener {
                 headers.get(KafkaHeaders.RECEIVED_PARTITION_ID),
                 headers.get(KafkaHeaders.OFFSET),
                 headers.get(KafkaHeaders.MESSAGE_KEY),
-                message.get("content").toString());
+                message.get("content"));
     }
 
 }

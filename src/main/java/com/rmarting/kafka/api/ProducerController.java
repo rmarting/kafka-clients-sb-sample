@@ -27,7 +27,7 @@ import java.util.concurrent.ExecutionException;
 @Tag(name = "producer", description = "Operations to produce messages to a Kafka Cluster")
 public class ProducerController {
 	
-	private final static Logger LOGGER = LoggerFactory.getLogger(ProducerController.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ProducerController.class);
 
 	@Autowired
 	private ApplicationContext applicationContext;
