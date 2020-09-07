@@ -1,15 +1,15 @@
-package com.jromanmartin.kafka.model;
+package com.rmarting.kafka.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.io.Serializable;
 
-public class CustomMessage implements Serializable {
+public class MessageDTO implements Serializable {
 
 	private static final long serialVersionUID = 1305278483346223763L;
 
 	@Schema(description = "Key to identify this message.", required = false, example = "1")
-	private Long key;
+	private String key;
 
 	@Schema(description = "Timestamp.", required = true)
 	private long timestamp;
@@ -23,11 +23,11 @@ public class CustomMessage implements Serializable {
 	@Schema(description = "Offset in the partition.", required = false, readOnly = true)
 	private long offset;
 	
-	public Long getKey() {
+	public String getKey() {
 		return key;
 	}
 
-	public void setKey(Long key) {
+	public void setKey(String key) {
 		this.key = key;
 	}
 

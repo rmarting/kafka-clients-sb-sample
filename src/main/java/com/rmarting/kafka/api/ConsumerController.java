@@ -1,7 +1,9 @@
-package com.jromanmartin.kafka.consumer;
+package com.rmarting.kafka.api;
 
-import com.jromanmartin.kafka.model.CustomMessage;
-import com.jromanmartin.kafka.model.CustomMessageList;
+//import com.jromanmartin.kafka.dto.CustomMessage;
+//import com.jromanmartin.kafka.dto.CustomMessageList;
+import com.rmarting.kafka.dto.MessageDTO;
+import com.rmarting.kafka.dto.MessageListDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -9,13 +11,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
@@ -35,10 +36,13 @@ public class ConsumerController {
 
 	private final static Logger LOGGER = LoggerFactory.getLogger(ConsumerController.class);
 
-	@Autowired
 	private ApplicationContext applicationContext;
 
-	@Value("${consumer.poolTimeout:10}")
+	public ConsumerController(ApplicationContext applicationContext) {
+		this.applicationContext = applicationContext;
+	}
+
+	@Value("${consumer.poolTimeout}")
 	private Long poolTimeout;
 
 	@Operation(summary = "Get a list of records from a topic", tags = { "consumer" })
@@ -46,20 +50,25 @@ public class ConsumerController {
 		@ApiResponse(
 				responseCode = "200",
 				description = "List of records from topic",
-				content = @Content(schema = @Schema(implementation = CustomMessageList.class))),
+				content = @Content(schema = @Schema(implementation = MessageListDTO.class))),
 		@ApiResponse(responseCode = "404", description = "Not records in topic"),
 		@ApiResponse(responseCode = "500", description = "Internal Server Error") })
 	@GetMapping(value = "/kafka/{topicName}", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<CustomMessageList> pollFromTopic(
+	public ResponseEntity<MessageListDTO> pollFromTopic(
 			@Parameter(description = "Topic name", required = true) @PathVariable String topicName,
 			@Parameter(description = "Commit results", required = false) @RequestParam(defaultValue = "true") boolean commit,
 			@Parameter(description = "Partition ID", required = false) @RequestParam(required = false) Integer partition) {
+
 		int messageFound = 0;
-		List<ConsumerRecord<Long, CustomMessage>> records = new ArrayList<>();
-		CustomMessageList response = new CustomMessageList();
+
+		// API Response
+		MessageListDTO response = new MessageListDTO();
+		List<MessageDTO> messageDTOS = new ArrayList<>();
 
 		@SuppressWarnings("unchecked")
-		Consumer<Long, CustomMessage> consumer = applicationContext.getBean(Consumer.class);
+		Consumer<String, GenericRecord> consumer = applicationContext.getBean(Consumer.class);
+
+		// TODO Refactor to a KafkaFacade class
 
 		try {
 			// Assign to partition defined
@@ -77,16 +86,22 @@ public class ConsumerController {
 
 			LOGGER.info("Polling records from topic {}", topicName);
 
-			ConsumerRecords<Long, CustomMessage> consumerRecords = consumer.poll(Duration.ofSeconds(poolTimeout));
+			ConsumerRecords<String, GenericRecord> consumerRecords = consumer.poll(Duration.ofSeconds(poolTimeout));
 
 			LOGGER.info("Polled #{} records from topic {}", consumerRecords.count(), topicName);
 
 			consumerRecords.forEach(record -> {
+				MessageDTO messageDTO = new MessageDTO();
+				// TODO Create a Mapper
+				messageDTO.setTimestamp((Long) record.value().get("timestamp"));
+				messageDTO.setContent(record.value().get("content").toString());
 				// Record Metadata
-				record.value().setOffset(record.offset());
-				record.value().setPartition(record.partition());
+				messageDTO.setKey((null != record.key() ? record.key().toString() : null));
+				messageDTO.setPartition(record.partition());
+				messageDTO.setOffset(record.offset());
+				messageDTO.setTimestamp(record.timestamp());
 
-				records.add(record);
+				messageDTOS.add(messageDTO);
 			});
 
 			// Commit consumption
@@ -100,13 +115,11 @@ public class ConsumerController {
 		}
 
 		// Prepare response
-		if (records.isEmpty()) {
+		if (messageDTOS.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
 		}
 
-		records.forEach(record -> {
-			response.addCustomMessage(record.value());
-		});
+		response.setMessages(messageDTOS);
 
 		return ResponseEntity.ok(response);
 	}
