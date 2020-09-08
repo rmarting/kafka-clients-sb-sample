@@ -1,12 +1,16 @@
 package com.rmarting.kafka.config;
 
 import com.rmarting.kafka.schema.avro.Message;
+import io.apicurio.registry.client.CompatibleClient;
+import io.apicurio.registry.client.RegistryRestClient;
+import io.apicurio.registry.client.RegistryRestClientImpl;
+import io.apicurio.registry.client.RegistryService;
 import io.apicurio.registry.utils.serde.AbstractKafkaSerDe;
 import io.apicurio.registry.utils.serde.AbstractKafkaSerializer;
 import io.apicurio.registry.utils.serde.AvroKafkaDeserializer;
 import io.apicurio.registry.utils.serde.AvroKafkaSerializer;
-import io.apicurio.registry.utils.serde.strategy.FindLatestIdStrategy;
-import io.apicurio.registry.utils.serde.strategy.TopicIdStrategy;
+import io.apicurio.registry.utils.serde.avro.DefaultAvroDatumProvider;
+import io.apicurio.registry.utils.serde.strategy.*;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -18,12 +22,21 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
+import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.config.KafkaListenerContainerFactory;
+import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
+import org.springframework.kafka.listener.ContainerProperties;
+import org.springframework.kafka.support.converter.BatchMessagingMessageConverter;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Map;
 import java.util.Properties;
 
 @Configuration
@@ -81,12 +94,21 @@ public class KafkaConfig {
 
         // Service Registry
         props.putIfAbsent(AbstractKafkaSerDe.REGISTRY_URL_CONFIG_PARAM, serviceRegistryUrl);
+        // Artifact Id Strategies (implementations of ArtifactIdStrategy)
         // Simple Topic Id Strategy (schema = topicName)
         //props.putIfAbsent(AbstractKafkaSerializer.REGISTRY_ARTIFACT_ID_STRATEGY_CONFIG_PARAM, SimpleTopicIdStrategy.class.getName());
-        //props.putIfAbsent(AbstractKafkaSerializer.REGISTRY_GLOBAL_ID_STRATEGY_CONFIG_PARAM, FindBySchemaIdStrategy.class.getName());
-        // Topic Id Strategy (schema = topicName-(key|value)
+        // Topic Id Strategy (schema = topicName-(key|value)) - Default Strategy
         props.putIfAbsent(AbstractKafkaSerializer.REGISTRY_ARTIFACT_ID_STRATEGY_CONFIG_PARAM, TopicIdStrategy.class.getName());
-        props.putIfAbsent(AbstractKafkaSerializer.REGISTRY_GLOBAL_ID_STRATEGY_CONFIG_PARAM, FindLatestIdStrategy.class.getName());
+        // Record Id Strategy (schema = full name of the schema (namespace.name))
+        //props.putIfAbsent(AbstractKafkaSerializer.REGISTRY_ARTIFACT_ID_STRATEGY_CONFIG_PARAM, RecordIdStrategy.class.getName());
+        // Topic Record Id Strategy (schema = topic name and the full name of the schema (topicName-namespace.name)
+        //props.putIfAbsent(AbstractKafkaSerializer.REGISTRY_ARTIFACT_ID_STRATEGY_CONFIG_PARAM, TopicRecordIdStrategy.class.getName());
+
+        // Global Id Strategies (implementations of GlobalIdStrategy)
+        //props.putIfAbsent(AbstractKafkaSerializer.REGISTRY_GLOBAL_ID_STRATEGY_CONFIG_PARAM, FindLatestIdStrategy.class.getName());
+        //props.putIfAbsent(AbstractKafkaSerializer.REGISTRY_GLOBAL_ID_STRATEGY_CONFIG_PARAM, FindBySchemaIdStrategy.class.getName());
+        //props.putIfAbsent(AbstractKafkaSerializer.REGISTRY_GLOBAL_ID_STRATEGY_CONFIG_PARAM, GetOrCreateIdStrategy.class.getName());
+        //props.putIfAbsent(AbstractKafkaSerializer.REGISTRY_GLOBAL_ID_STRATEGY_CONFIG_PARAM, AutoRegisterIdStrategy.class.getName());
 
         // Acknowledgement
         props.putIfAbsent(ProducerConfig.ACKS_CONFIG, acks);
@@ -96,7 +118,8 @@ public class KafkaConfig {
 
     @Bean
     @Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-    public Consumer<String, GenericRecord> createConsumer() {
+    //public Consumer<String, GenericRecord> createConsumer() {
+    public Consumer<String, Message> createConsumer() {
         Properties props = new Properties();
 
         // Kafka Bootstrap
@@ -144,4 +167,35 @@ public class KafkaConfig {
         return new KafkaConsumer<>(props);
     }
 
+//    String registryUrl_node1 = PropertiesUtil.property(clientProperties, "registry.url.node1",
+//            "https//my-cluster-service-registry-myproject.example.com");
+//    RegistryService service = RegistryClient.cached(registryUrl);
+
+    @Bean
+    public ConsumerFactory<String, Message> consumerFactory(KafkaProperties kafkaProperties) {
+        Map<String, Object> consumerProperties = kafkaProperties.buildConsumerProperties();
+
+        // FIXME It is a deprecated class
+        RegistryService registryService = CompatibleClient.createCompatible(serviceRegistryUrl);
+
+        return new DefaultKafkaConsumerFactory<>(consumerProperties,
+                new StringDeserializer(),
+                new AvroKafkaDeserializer<>(registryService));
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, Message> kafkaListenerContainerFactory(KafkaProperties kafkaProperties) {
+        ConcurrentKafkaListenerContainerFactory<String, Message> factory = new ConcurrentKafkaListenerContainerFactory<>();
+
+        // Consumer Factory
+        factory.setConsumerFactory(consumerFactory(kafkaProperties));
+        // Enable batch processing in listeners
+        //factory.setBatchListener(true);
+        //factory.setMessageConverter(new BatchMessagingMessageConverter(converter()));
+        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL);
+
+        return factory;
+    }
+
+    // KafkaMessageListenerContainer
 }
