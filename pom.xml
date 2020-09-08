@@ -81,13 +81,6 @@
 			<version>4.5.6.Final</version>
 		</dependency>
 
-		<!-- hot reload - press Ctrl+F9 in IntelliJ after a code change while application is running -->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-devtools</artifactId>
-			<optional>true</optional>
-		</dependency>
-
 		<!-- Test Dependencies -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -188,6 +181,10 @@
 										<messages>${project.basedir}/src/main/resources/schemas/message.avsc</messages>
 										<!-- Schema definition for TopicIdStrategy strategy -->
 										<messages-value>${project.basedir}/src/main/resources/schemas/message.avsc</messages-value>
+										<!-- Schema definition for RecordIdStrategy strategy -->
+										<com.rmarting.kafka.schema.avro.Message>${project.basedir}/src/main/resources/schemas/message.avsc</com.rmarting.kafka.schema.avro.Message>
+										<!-- Schema definition for TopicRecordIdStrategystrategy -->
+										<messages-com.rmarting.kafka.schema.avro.Message>${project.basedir}/src/main/resources/schemas/message.avsc</messages-com.rmarting.kafka.schema.avro.Message>
 									</artifacts>
 								</configuration>
 							</execution>
@@ -199,6 +196,7 @@
 
 		<profile>
 			<id>openshift</id>
+
 			<build>
 				<plugins>
 					<plugin>
