@@ -3,7 +3,6 @@ package com.rmarting.kafka.service;
 import com.rmarting.kafka.dto.MessageDTO;
 import com.rmarting.kafka.dto.MessageListDTO;
 import com.rmarting.kafka.schema.avro.Message;
-import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.Producer;
@@ -23,14 +22,14 @@ import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 
 /**
- * Facade for kafka service which includes a set of primitives to manage events and topics such as:
+ * Service for Kafka service which includes a set of primitives to manage events and topics such as:
  * 1. consume events from topic
  * 2. send event to topic
  * 3. subscribe topic
  * <p>
  * Additionally, it only processes messages of type {@link Message}
  *
- * @author alizardo
+ * @author rmarting
  */
 @Service
 public class MessageService {
@@ -39,13 +38,13 @@ public class MessageService {
 
     private ObjectFactory<Producer<String, Message>> producer;
 
-    private ObjectFactory<Consumer<String, GenericRecord>> consumer;
+    private ObjectFactory<Consumer<String, Message>> consumer;
 
     @Value("${consumer.poolTimeout}")
     private Long poolTimeout;
 
     public MessageService(ObjectFactory<Producer<String, Message>> producer,
-                          ObjectFactory<Consumer<String, GenericRecord>> consumer) {
+                          ObjectFactory<Consumer<String, Message>> consumer) {
         this.consumer = consumer;
         this.producer = producer;
     }
@@ -117,7 +116,7 @@ public class MessageService {
         MessageListDTO messageListDTO = new MessageListDTO();
 
         // Local instance (prototype)
-        Consumer<String, GenericRecord> localConsumer = consumer.getObject();
+        Consumer<String, Message> localConsumer = consumer.getObject();
 
         try {
             // Assign to partition defined
@@ -135,7 +134,7 @@ public class MessageService {
 
             LOGGER.info("Polling records from topic {}", topicName);
 
-            ConsumerRecords<String, GenericRecord> consumerRecords = localConsumer.poll(Duration.ofSeconds(poolTimeout));
+            ConsumerRecords<String, Message> consumerRecords = localConsumer.poll(Duration.ofSeconds(poolTimeout));
 
             LOGGER.info("Polled #{} records from topic {}", consumerRecords.count(), topicName);
 

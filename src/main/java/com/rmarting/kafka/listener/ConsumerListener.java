@@ -1,7 +1,6 @@
 package com.rmarting.kafka.listener;
 
 import com.rmarting.kafka.schema.avro.Message;
-import org.apache.avro.generic.GenericRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -19,8 +18,7 @@ public class ConsumerListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsumerListener.class);
 
     @KafkaListener(topics = {"messages"})
-    public void handleMessages(/*@Payload GenericRecord message,*/
-                               @Payload Message message,
+    public void handleMessages(@Payload Message message,
                                @Headers Map<String, Object> headers,
                                Acknowledgment acknowledgment) {
         LOGGER.info("Received record from Topic-Partition '{}-{}' with Offset '{}' -> Key: '{}' - Value '{}'",
