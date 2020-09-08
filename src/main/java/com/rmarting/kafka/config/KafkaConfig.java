@@ -29,119 +29,119 @@ import java.util.Properties;
 @Configuration
 public class KafkaConfig {
 
-	@Value("${kafka.bootstrap-servers:localhost:8080}")
-	private String kafkaBrokers;
+    @Value("${kafka.bootstrap-servers:localhost:8080}")
+    private String kafkaBrokers;
 
-	@Value("${producer.clienId:kafka-client-sb-producer-client}")
-	private String producerClientId;
+    @Value("${producer.clienId:kafka-client-sb-producer-client}")
+    private String producerClientId;
 
-	@Value("${producer.acks:1}")
-	private String acks;
+    @Value("${producer.acks:1}")
+    private String acks;
 
-	@Value("${consumer.groupId:kafka-client-sb-consumer}")
-	private String consumerGroupId;
+    @Value("${consumer.groupId:kafka-client-sb-consumer}")
+    private String consumerGroupId;
 
-	@Value("${consumer.clientId:kafka-client-sb-consumer-client}")
-	private String consumerClientId;
+    @Value("${consumer.clientId:kafka-client-sb-consumer-client}")
+    private String consumerClientId;
 
-	@Value("${consumer.maxPoolRecords:1000}")
-	private String maxPoolRecords;
+    @Value("${consumer.maxPoolRecords:1000}")
+    private String maxPoolRecords;
 
-	@Value("${consumer.offsetReset:earliest}")
-	private String offsetReset;
+    @Value("${consumer.offsetReset:earliest}")
+    private String offsetReset;
 
-	@Value("${consumer.autoCommit:false}")
-	private String autoCommit;
+    @Value("${consumer.autoCommit:false}")
+    private String autoCommit;
 
-	@Value("${apicurio.registry.url:http://localhost:8080/api}")
-	private String serviceRegistryUrl;
+    @Value("${apicurio.registry.url:http://localhost:8080/api}")
+    private String serviceRegistryUrl;
 
-	private String getHostname() {
-		try {
-			return InetAddress.getLocalHost().getHostName();
-		} catch (UnknownHostException e) {
-			return "UnknownHost";
-		}
-	}
+    private String getHostname() {
+        try {
+            return InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            return "UnknownHost";
+        }
+    }
 
-	@Bean
-	@Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-	public Producer<String, Message> createProducer() {
-		Properties props = new Properties();
+    @Bean
+    @Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+    public Producer<String, Message> createProducer() {
+        Properties props = new Properties();
 
-		// Kafka Bootstrap
-		props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBrokers);
+        // Kafka Bootstrap
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBrokers);
 
-		// Producer Client
-		props.putIfAbsent(ProducerConfig.CLIENT_ID_CONFIG, producerClientId);
+        // Producer Client
+        props.putIfAbsent(ProducerConfig.CLIENT_ID_CONFIG, producerClientId + "-" + getHostname());
 
-		// Serializers for Keys and Values
-		props.putIfAbsent(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-		props.putIfAbsent(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, AvroKafkaSerializer.class.getName());
+        // Serializers for Keys and Values
+        props.putIfAbsent(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        props.putIfAbsent(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, AvroKafkaSerializer.class.getName());
 
-		// Service Registry
-		props.putIfAbsent(AbstractKafkaSerDe.REGISTRY_URL_CONFIG_PARAM, serviceRegistryUrl);
-		// Simple Topic Id Strategy (schema = topicName)
-		//props.putIfAbsent(AbstractKafkaSerializer.REGISTRY_ARTIFACT_ID_STRATEGY_CONFIG_PARAM, SimpleTopicIdStrategy.class.getName());
-		//props.putIfAbsent(AbstractKafkaSerializer.REGISTRY_GLOBAL_ID_STRATEGY_CONFIG_PARAM, FindBySchemaIdStrategy.class.getName());
-		// Topic Id Strategy (schema = topicName-(key|value)
-		props.putIfAbsent(AbstractKafkaSerializer.REGISTRY_ARTIFACT_ID_STRATEGY_CONFIG_PARAM, TopicIdStrategy.class.getName());
-		props.putIfAbsent(AbstractKafkaSerializer.REGISTRY_GLOBAL_ID_STRATEGY_CONFIG_PARAM, FindLatestIdStrategy.class.getName());
+        // Service Registry
+        props.putIfAbsent(AbstractKafkaSerDe.REGISTRY_URL_CONFIG_PARAM, serviceRegistryUrl);
+        // Simple Topic Id Strategy (schema = topicName)
+        //props.putIfAbsent(AbstractKafkaSerializer.REGISTRY_ARTIFACT_ID_STRATEGY_CONFIG_PARAM, SimpleTopicIdStrategy.class.getName());
+        //props.putIfAbsent(AbstractKafkaSerializer.REGISTRY_GLOBAL_ID_STRATEGY_CONFIG_PARAM, FindBySchemaIdStrategy.class.getName());
+        // Topic Id Strategy (schema = topicName-(key|value)
+        props.putIfAbsent(AbstractKafkaSerializer.REGISTRY_ARTIFACT_ID_STRATEGY_CONFIG_PARAM, TopicIdStrategy.class.getName());
+        props.putIfAbsent(AbstractKafkaSerializer.REGISTRY_GLOBAL_ID_STRATEGY_CONFIG_PARAM, FindLatestIdStrategy.class.getName());
 
-		// Acknowledgement
-		props.putIfAbsent(ProducerConfig.ACKS_CONFIG, acks);
+        // Acknowledgement
+        props.putIfAbsent(ProducerConfig.ACKS_CONFIG, acks);
 
-		return new KafkaProducer<>(props);
-	}
-	
-	@Bean
-	@Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-	public Consumer<String, GenericRecord> createConsumer() {
-		Properties props = new Properties();
+        return new KafkaProducer<>(props);
+    }
 
-		// Kafka Bootstrap
-		props.putIfAbsent(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBrokers);
+    @Bean
+    @Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+    public Consumer<String, GenericRecord> createConsumer() {
+        Properties props = new Properties();
 
-		/*
-		 * With group id, kafka broker ensures that the same message is not consumed more then once by a
-		 * consumer group meaning a message can be only consumed by any one member a consumer group.
-		 *
-		 * Consumer groups is also a way of supporting parallel consumption of the data i.e. different consumers of
-		 * the same consumer group consume data in parallel from different partitions.
-		 */
-		props.putIfAbsent(ConsumerConfig.GROUP_ID_CONFIG, consumerGroupId);
+        // Kafka Bootstrap
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBrokers);
 
-		/*
-		 * In addition to group.id, each consumer also identifies itself to the Kafka broker using consumer.id.
-		 * This is used by Kafka to identify the currently ACTIVE consumers of a particular consumer group.
-		 */
-		props.putIfAbsent(ConsumerConfig.CLIENT_ID_CONFIG, consumerClientId + getHostname());
+        /*
+         * With group id, kafka broker ensures that the same message is not consumed more then once by a
+         * consumer group meaning a message can be only consumed by any one member a consumer group.
+         *
+         * Consumer groups is also a way of supporting parallel consumption of the data i.e. different consumers of
+         * the same consumer group consume data in parallel from different partitions.
+         */
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroupId);
 
-		// Deserializers for Keys and Values
-		props.putIfAbsent(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-		props.putIfAbsent(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, AvroKafkaDeserializer.class.getName());
+        /*
+         * In addition to group.id, each consumer also identifies itself to the Kafka broker using consumer.id.
+         * This is used by Kafka to identify the currently ACTIVE consumers of a particular consumer group.
+         */
+        props.put(ConsumerConfig.CLIENT_ID_CONFIG, consumerClientId + "-" + getHostname());
 
-		// Pool size
-		props.putIfAbsent(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPoolRecords);
+        // Deserializers for Keys and Values
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, AvroKafkaDeserializer.class.getName());
 
-		/*
-		 * If true the consumer's offset will be periodically committed in the background.
-		 * Disabled to allow commit or not under some circumstances
-		 */
-		props.putIfAbsent(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, autoCommit);
+        // Pool size
+        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPoolRecords);
 
-		/*
-		 * What to do when there is no initial offset in Kafka or if the current offset does not exist any more on the
-		 * server:
-		 *   earliest: automatically reset the offset to the earliest offset
-		 *   latest: automatically reset the offset to the latest offset
-		 */
-		props.putIfAbsent(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, offsetReset);
+        /*
+         * If true the consumer's offset will be periodically committed in the background.
+         * Disabled to allow commit or not under some circumstances
+         */
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, autoCommit);
 
-		// Service Registry Integration
-		props.putIfAbsent(AbstractKafkaSerDe.REGISTRY_URL_CONFIG_PARAM, serviceRegistryUrl);
+        /*
+         * What to do when there is no initial offset in Kafka or if the current offset does not exist any more on the
+         * server:
+         *   earliest: automatically reset the offset to the earliest offset
+         *   latest: automatically reset the offset to the latest offset
+         */
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, offsetReset);
 
-		return new KafkaConsumer<>(props);
-	}
+        // Service Registry Integration
+        props.put(AbstractKafkaSerDe.REGISTRY_URL_CONFIG_PARAM, serviceRegistryUrl);
+
+        return new KafkaConsumer<>(props);
+    }
 
 }
