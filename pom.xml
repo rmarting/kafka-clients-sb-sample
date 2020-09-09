@@ -24,7 +24,7 @@
 		<avro.version>1.10.0</avro.version>
 		<!-- Apicurio Registry -->
 		<apicurio.version>1.3.0.Final</apicurio.version>
-<!--		<apicurio.registry.url>https://localhost:8080/api</apicurio.registry.url>-->
+		<!--<apicurio.registry.url>http://localhost:8080/api</apicurio.registry.url>-->
 		<apicurio.registry.url>http://service-registry.amq-streams.apps-crc.testing/api</apicurio.registry.url>
 		<!-- JKube -->
 		<jkube.namespace>amq-streams</jkube.namespace>
@@ -202,7 +202,7 @@
 					<plugin>
 						<groupId>org.eclipse.jkube</groupId>
 						<artifactId>openshift-maven-plugin</artifactId>
-						<version>1.0.0-rc-1</version>
+						<version>1.0.0</version>
 					</plugin>
 				</plugins>
 			</build>
@@ -214,7 +214,7 @@
 					<plugin>
 						<groupId>org.eclipse.jkube</groupId>
 						<artifactId>kubernetes-maven-plugin</artifactId>
-						<version>1.0.0-rc-1</version>
+						<version>1.0.0</version>
 					</plugin>
 				</plugins>
 			</build>
