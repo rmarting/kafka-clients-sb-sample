@@ -154,10 +154,6 @@ spec:
           type: persistent-claim
           size: 25Gi
           deleteClaim: true
-        - id: 1
-          type: persistent-claim
-          size: 25Gi
-          deleteClaim: true
     template:
       pod:
         metadata:

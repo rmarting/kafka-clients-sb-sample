@@ -3,7 +3,7 @@ kind: KafkaTopic
 metadata:
   labels:
     strimzi.io/cluster: my-kafka
-  name: another-topic
+  name: messages
 spec:
   config:
     min.insync.replicas: "2"
@@ -11,4 +11,3 @@ spec:
     segment.bytes: "1073741824"
   partitions: 3
   replicas: 3
-  topicName: another-topic

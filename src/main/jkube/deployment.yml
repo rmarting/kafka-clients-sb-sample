@@ -6,6 +6,8 @@ metadata:
     version: ${project.version}
     provider: jkube
 spec:
+  triggers:
+    - type: ConfigChange
   template:
     spec:
       containers:

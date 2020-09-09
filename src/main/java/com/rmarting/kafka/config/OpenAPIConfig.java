@@ -1,4 +1,4 @@
-package com.jromanmartin.kafka.config;
+package com.rmarting.kafka.config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -14,21 +14,12 @@ import org.springframework.context.annotation.Configuration;
 public class OpenAPIConfig {
 
     @Bean
-    public GroupedOpenApi producerOpenApi() {
-        String[] paths = { "/producer/**" };
+    public GroupedOpenApi openApi() {
+        String[] paths = { "/producer/**", "/consumer/**" };
         return GroupedOpenApi.builder()
-                .setGroup("producer")
-                .packagesToScan("com.jromanmartin.kafka.producer")
-                .pathsToMatch(paths).build();
-    }
-
-    @Bean
-    public GroupedOpenApi consumerOpenApi() {
-        String[] paths = { "/consumer/**" };
-        return GroupedOpenApi.builder()
-                .setGroup("consumer")
+                .setGroup("kafka-client-api")
+                .packagesToScan("com.rmarting.kafka.api")
                 .pathsToMatch(paths)
-                .packagesToScan("com.jromanmartin.kafka.consumer")
                 .build();
     }
 
@@ -37,11 +28,14 @@ public class OpenAPIConfig {
         return new OpenAPI()
                 .components(new Components())
                 .info(new Info()
-                        .title("Kafka Client Application API")
+                        .title("Kafka Client Spring Boot Application API")
                         .version(appVersion)
                         .license(new License().name("Apache 2.0").url("http://springdoc.org"))
-                        .description("Sample Spring Boot RESTful service using springdoc-openapi and OpenAPI 3 to produce and consume messages from a Kafka Cluster"))
-                .addTagsItem(new Tag().name("producer")).addTagsItem(new Tag().name("consumer"));
+                        .description(
+                                "Sample Spring Boot REST service using springdoc-openapi and OpenAPI 3 to" +
+                                "produce and consume messages from a Kafka Cluster"))
+                .addTagsItem(new Tag().name("producer"))
+                .addTagsItem(new Tag().name("consumer"));
     }
 
 }

@@ -1,0 +1,11 @@
+apiVersion: apicur.io/v1alpha1
+kind: ApicurioRegistry
+metadata:
+  name: service-registry
+spec:
+  configuration:
+    persistence: "streams"
+    streams:
+      bootstrapServers: "my-kafka-kafka-bootstrap:9092"
+  deployment:
+    replicas: 1
