@@ -28,7 +28,7 @@ public class ProducerController {
 		this.messageService = messageService;
 	}
 
-	@Operation(summary = "Send a message synchronously", tags = { "producer"})
+	@Operation(summary = "Send a message synchronously using the Kafka Client Producer API", tags = { "producer"})
     @ApiResponses(value = {
 		@ApiResponse(
 				responseCode = "200",
@@ -48,7 +48,7 @@ public class ProducerController {
 		return ResponseEntity.ok(messageDTO);
 	}
 
-	@Operation(summary = "Send a message asynchronously", tags = { "producer"})
+	@Operation(summary = "Send a message asynchronously using the Kafka Client Producer API", tags = { "producer"})
 	@ApiResponses(value = {
 			@ApiResponse(
 					responseCode = "200",
@@ -66,6 +66,26 @@ public class ProducerController {
 		LOGGER.debug("Published successfully async message (200) into topic {}", topicName);
 
 		return ResponseEntity.ok(messageDTO);
-	}	
-	
+	}
+
+	@Operation(summary = "Send a message synchronously using the Spring Kafka KafkaTemplate API", tags = { "producer"})
+	@ApiResponses(value = {
+			@ApiResponse(
+					responseCode = "200",
+					description = "Message sent",
+					content = @Content(schema = @Schema(implementation = MessageDTO.class))),
+			@ApiResponse(responseCode = "404", description = "Message not sent"),
+			@ApiResponse(responseCode = "500", description = "Internal Server Error")
+	})
+	@PostMapping(value = "/spring/{topicName}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<MessageDTO> sendToTopicBySpring(
+			@Parameter(description = "Topic name", required = true) @PathVariable String topicName,
+			@Parameter(description = "Message to send", required = true) @RequestBody MessageDTO messageDTO) {
+		messageDTO = messageService.sendMessage(topicName, messageDTO);
+
+		LOGGER.debug("Sent successfully message (200) into topic {}", topicName);
+
+		return ResponseEntity.ok(messageDTO);
+	}
+
 }

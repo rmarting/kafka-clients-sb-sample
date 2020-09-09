@@ -17,12 +17,17 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.ProducerFactory;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Map;
 import java.util.Properties;
 
 @Configuration
@@ -152,6 +157,18 @@ public class KafkaConfig {
         props.put(AvroDatumProvider.REGISTRY_USE_SPECIFIC_AVRO_READER_CONFIG_PARAM, true);
 
         return new KafkaConsumer<>(props);
+    }
+
+    @Bean
+    public ProducerFactory<String, Message> producerFactory(KafkaProperties kafkaProperties) {
+        Map<String, Object> configProps = kafkaProperties.buildProducerProperties();
+
+        return new DefaultKafkaProducerFactory<>(configProps);
+    }
+
+    @Bean
+    public KafkaTemplate<String, Message> kafkaTemplate(KafkaProperties kafkaProperties) {
+        return new KafkaTemplate<>(producerFactory(kafkaProperties));
     }
 
 }

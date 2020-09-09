@@ -13,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 
 import javax.validation.constraints.NotEmpty;
@@ -40,13 +42,17 @@ public class MessageService {
 
     private ObjectFactory<Consumer<String, Message>> consumer;
 
+    private KafkaTemplate<String, Message> kafkaTemplate;
+
     @Value("${consumer.poolTimeout}")
     private Long poolTimeout;
 
     public MessageService(ObjectFactory<Producer<String, Message>> producer,
-                          ObjectFactory<Consumer<String, Message>> consumer) {
+                          ObjectFactory<Consumer<String, Message>> consumer,
+                          KafkaTemplate<String, Message> kafkaTemplate) {
         this.consumer = consumer;
         this.producer = producer;
+        this.kafkaTemplate = kafkaTemplate;
     }
 
     public MessageDTO publishSync(final @NotEmpty String topicName, final @NotNull MessageDTO messageDTO) {
@@ -106,6 +112,40 @@ public class MessageService {
         } finally {
             localProducer.flush();
             localProducer.close();
+        }
+
+        return messageDTO;
+    }
+
+    public MessageDTO sendMessage(final @NotEmpty String topicName,
+                                  final @NotNull MessageDTO messageDTO) {
+        // Message to send
+        // TODO Create a Mapper
+        Message message = new Message();
+        message.setContent(messageDTO.getContent());
+        message.setTimestamp(System.currentTimeMillis());
+
+        SendResult<String, Message> record = null;
+
+        try {
+            if (null == messageDTO.getKey()) {
+                // Value as CustomMessage
+                record = kafkaTemplate.send(topicName, message).get();
+            } else {
+                // Value as CustomMessage
+                record = kafkaTemplate.send(topicName, messageDTO.getKey(), message).get();
+            }
+
+            LOGGER.info("Record sent to partition {} with offset {}",
+                    record.getRecordMetadata().partition(), record.getRecordMetadata().offset());
+
+            // Update model
+            messageDTO.setPartition(record.getRecordMetadata().partition());
+            messageDTO.setOffset(record.getRecordMetadata().offset());
+        } catch (ExecutionException e) {
+            LOGGER.warn("Execution Error in sending record", e);
+        } catch (InterruptedException e) {
+            LOGGER.warn("Interrupted Error in sending record", e);
         }
 
         return messageDTO;
