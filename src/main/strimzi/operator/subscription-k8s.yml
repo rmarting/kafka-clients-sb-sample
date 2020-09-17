@@ -6,7 +6,6 @@ metadata:
   namespace: amq-streams-demo
 spec:
   channel: stable
-  installPlanApproval: Automatic
   name: strimzi-kafka-operator
-  source: community-operators
-  sourceNamespace: openshift-marketplace
+  source: operatorhubio-catalog
+  sourceNamespace: olm

@@ -6,7 +6,6 @@ metadata:
   namespace: amq-streams-demo
 spec:
   channel: alpha
-  installPlanApproval: Automatic
   name: apicurio-registry
-  source: community-operators
-  sourceNamespace: openshift-marketplace
+  source: operatorhubio-catalog
+  sourceNamespace: olm
