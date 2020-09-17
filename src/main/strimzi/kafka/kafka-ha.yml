@@ -41,8 +41,17 @@ spec:
       # How long are delete records retained?. Default value: 86400000 (24 hours)
       log.cleaner.delete.retention.ms: 86400000
     listeners:
-      plain: {}
-      tls: {}
+      plain:
+        authentication:
+          type: scram-sha-512
+      tls:
+        authentication:
+          type: scram-sha-512
+#      # Only valid in OpenShift
+#      external:
+#        type: route
+#        authentication:
+#          type: scram-sha-512
     livenessProbe:
       initialDelaySeconds: 90
       timeoutSeconds: 5

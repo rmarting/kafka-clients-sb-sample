@@ -7,12 +7,14 @@ import io.apicurio.registry.utils.serde.AvroKafkaDeserializer;
 import io.apicurio.registry.utils.serde.AvroKafkaSerializer;
 import io.apicurio.registry.utils.serde.avro.AvroDatumProvider;
 import io.apicurio.registry.utils.serde.strategy.TopicIdStrategy;
+import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,6 +37,15 @@ public class KafkaConfig {
 
     @Value("${kafka.bootstrap-servers:localhost:8080}")
     private String kafkaBrokers;
+
+    @Value("${kafka.user.name}")
+    private String kafkaUser;
+
+    @Value("${kafka.user.password}")
+    private String kafkaPassword;
+
+    @Value("${kafka.security.protocol}")
+    private String kafkaSecurityProtocol;
 
     @Value("${producer.clienId:kafka-client-sb-producer-client}")
     private String producerClientId;
@@ -76,6 +87,13 @@ public class KafkaConfig {
         // Kafka Bootstrap
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBrokers);
 
+        // Security
+        props.put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, kafkaSecurityProtocol);
+        props.put(SaslConfigs.SASL_MECHANISM, "SCRAM-SHA-512");
+        props.put(SaslConfigs.SASL_JAAS_CONFIG,
+                "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + kafkaUser
+                        + "\" password=\"" + kafkaPassword + "\";");
+
         // Producer Client
         props.putIfAbsent(ProducerConfig.CLIENT_ID_CONFIG, producerClientId + "-" + getHostname());
 
@@ -114,6 +132,13 @@ public class KafkaConfig {
 
         // Kafka Bootstrap
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBrokers);
+
+        // Security
+        props.put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, kafkaSecurityProtocol);
+        props.put(SaslConfigs.SASL_MECHANISM, "SCRAM-SHA-512");
+        props.put(SaslConfigs.SASL_JAAS_CONFIG,
+                "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + kafkaUser
+                        + "\" password=\"" + kafkaPassword + "\";");
 
         /*
          * With group id, kafka broker ensures that the same message is not consumed more then once by a
