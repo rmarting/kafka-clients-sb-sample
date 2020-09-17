@@ -6,10 +6,18 @@ metadata:
     version: ${project.version}
     provider: jkube
 spec:
+  triggers:
+    - type: ConfigChange
   template:
     spec:
       containers:
-        - livenessProbe:
+        - env:
+          - name: KAFKA_USER_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: application
+          livenessProbe:
             failureThreshold: 3
             httpGet:
               path: /actuator/health

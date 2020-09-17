@@ -1,116 +1,235 @@
 # Kafka Clients on Spring Boot Sample
 
-This sample project demonstrates how to use Kafka Clients on Spring Boot to send and consume messages from an
-[Apache Kafka](https://kafka.apache.org/) cluster managed by [Strimzi](https://strimzi.io/) operator deployed on a 
-Kubernetes or OpenShift Platform.
+This sample project demonstrates how to use [Kafka Clients](https://mvnrepository.com/artifact/org.apache.kafka/kafka-clients)
+and [Spring Kafka](https://spring.io/projects/spring-kafka) on Spring Boot to send and consume messages from an
+[Apache Kafka](https://kafka.apache.org/) cluster. The Apache Kafka cluster is operated by [Strimzi](https://strimzi.io/)
+operator deployed on a Kubernetes or OpenShift Platform. These messages will be validated by a Schema Registry or Service Registry
+operated by [Apicurio](https://www.apicur.io/registry/docs/apicurio-registry/index.html#intro-to-the-registry) operator.
+
+Apache Kafka is an open-sourced distributed event streaming platform for high-performance data pipelines,
+streaming analytics, data integration, and mission-critical applications.
+
+Service Registry is a datastore for sharing standard event schemas and API designs across API and event-driven architectures.
+You can use Service Registry to decouple the structure of your data from your client applications, and to share and
+manage your data types and API descriptions at runtime using a REST interface.
 
 The example includes a simple REST API with the following operations:
 
 * Send messages to a Topic
 * Consume messages from a Topic
 
-This project only uses [Kafka Producer API](https://kafka.apache.org/documentation/#producerapi) and 
-[Kafka Consumer API](https://kafka.apache.org/documentation/#consumerapi).
-
 ## Environment
 
 This project requires a Kubernetes or OpenShift platform available. If you do not have one, you could use 
-one of the following resources to deploy locally a Kubernetes and OpenShift Cluster:
+one of the following resources to deploy locally a Kubernetes or OpenShift Cluster:
 
-* [Red Hat Container Development Kit - deploy and run an OpenShift 3.X cluster locally](https://developers.redhat.com/products/cdk/overview/)  
 * [Red Hat CodeReady Containers - OpenShift 4 on your Laptop](https://github.com/code-ready/crc)
 * [Minikube - Running Kubernetes Locally](https://kubernetes.io/docs/setup/minikube/)
 
-> Note: in older versions of Minikube you may hit an [issue](https://github.com/kubernetes/minikube/issues/8330)
+> Notes for Minikube:
+> * In older versions you may hit an [issue](https://github.com/kubernetes/minikube/issues/8330)
 > with Persistent Volume Claims stuck in Pending status
+> * Operator Lifecycle Manager is needed to deploy operators. To enable it in Minikube: 
+>   - Option 1: ```minikube start --addons olm```
+>   - Option 2: ```minikube addons enable olm```
+> * Others addons needed: ```ingress```, ```registry```
+
+> Note: Whatever the platform you are using (Kubernetes or OpenShift), you could use the 
+> Kubernetes CLI (```kubectl```) or OpenShift CLI (```oc```) to execute the commands described in this repo.
+> To reduce the length of this document, the commands displayed will use the Kubernetes CLI. When a specific
+> command is only valid for Kubernetes or OpenShift it will be identified.
+
+To deploy the resources, we will create a new ```amq-streams-demo``` namespace in the cluster in the case of Kubernetes:
+
+```shell script
+❯ kubectl create namespace amq-streams-demo
+```
+
+If your are using OpenShift, then we will create a project:
+
+```shell script
+❯ oc new-project amq-streams-demo
+```
+
+> Note: All the commands should be executed in this namespace. You could permanently save the namespace for
+> all subsequent ```kubectl``` commands in that context.
+>
+> In Kubernetes:
+>
+> ```shell script
+> ❯ kubectl config set-context --current --namespace=amq-streams-demo
+> ```
+> 
+> In OpenShift:
+>
+> ```shell script
+> ❯ oc project amq-streams-demo
+> ```
+
+### Deploying Strimzi and Apicurio Operators
+
+> **NOTE**: Only *cluster-admin* users could deploy Kubernetes Operators. This section must
+> be executed with one of them.
+
+To deploy the Strimzi and Apicurio Operators only to inspect our namespace, we need to use
+an ```OperatorGroup```. An OperatorGroup is an OLM resource that provides multitenant configuration to
+OLM-installed Operators. For more information about this object, please review the
+official documentation [here](https://docs.openshift.com/container-platform/4.5/operators/understanding_olm/olm-understanding-operatorgroups.html).
+
+```shell script
+❯ kubectl apply -f src/main/olm/operator-group.yml
+operatorgroup.operators.coreos.com/amq-streams-demo-og created
+```
+
+Now we are ready to deploy the Strimzi and Apicurio Operators:
+
+For Kubernetes use the following subscriptions:
+
+```shell script
+❯ kubectl apply -f src/main/strimzi/operator/subscription-k8s.yml
+subscription.operators.coreos.com/strimzi-kafka-operator created
+❯ kubectl apply -f src/main/apicurio/operator/subscription-k8s.yml
+subscription.operators.coreos.com/apicurio-registry created
+```
+
+For OpenShift use the following subscriptions:
+
+```shell script
+❯ oc apply -f src/main/strimzi/operator/subscription.yml
+subscription.operators.coreos.com/strimzi-kafka-operator created
+❯ oc apply -f src/main/apicurio/operator/subscription.yml 
+subscription.operators.coreos.com/apicurio-registry created
+```
+
+You could check that operators are successfully registered with:
+
+```shell script
+❯ kubectl get csv
+NAME                                    DISPLAY                      VERSION              REPLACES   PHASE
+apicurio-registry.v0.0.3-v1.2.3.final   Apicurio Registry Operator   0.0.3-v1.2.3.final              Succeeded
+strimzi-cluster-operator.v0.19.0        Strimzi                      0.19.0                          Succeeded
+```
+
+or verify the pods are running:
+
+```shell script
+❯ kubectl get pod
+NAME                                                READY   STATUS    RESTARTS   AGE
+apicurio-registry-operator-cbf6fcf57-d6shn          1/1     Running   0          3m2s
+strimzi-cluster-operator-v0.19.0-7555cff6d9-vlgwp   1/1     Running   0          3m7s
+```
+
+For more information about how to install Operators using the CLI command, please review this [article](
+https://docs.openshift.com/container-platform/4.5/operators/olm-adding-operators-to-cluster.html#olm-installing-operator-from-operatorhub-using-cli_olm-adding-operators-to-a-cluster)
 
 ### Deploying Kafka
-
-Strimzi includes a set of Kubernetes Operators to deploy Apache Kafka Clusters on Kubernetes and OpenShift platform.
-
-You can follow the instructions from [Community Documentation](https://strimzi.io/docs/operators/latest/deploying.html)
-or you could use my [Ansible Playbook](https://github.com/rmarting/strimzi-ansible-playbook) to do it. In both cases
-it is very easy to do it.
 
 ```src/main/strimzi``` folder includes a set of custom resource definitions to deploy a Kafka Cluster
 and some Kafka Topics using the Strimzi Operators.
 
-To deploy Kafka and the rest of the resources, we will create a new namespace in the cluster as:
+To deploy the Kafka Cluster:
 
-In Kubernetes:
-
-```bash
-kubectl create namespace amq-streams
-```
-
-In OpenShift:
-
-```bash
-oc new-project amq-streams
-```
-
-To deploy the Kafka Cluster in Kubernetes:
-
-```bash
-$ kubectl apply -f src/main/strimzi/kafka.yml -n amq-streams
+```shell script
+❯ kubectl apply -f src/main/strimzi/kafka/kafka.yml
 kafka.kafka.strimzi.io/my-kafka created
 ```
 
-To deploy the Kafka Cluster in Minikube or single node cluster:
-```bash
-$ kubectl apply -f src/main/strimzi/kafka-single.yml -n amq-streams
-kafka.kafka.strimzi.io/my-kafka created
+> If you want to deploy a Kafka Cluster with HA capabilities, there is a definition
+> in [kafka-ha.yml](./src/main/strimzi/kafka/kafka-ha.yml) file.
+
+To deploy the Kafka Topics:
+
+```shell script
+❯ kubectl apply -f src/main/strimzi/topics/kafkatopic-messages.yml
+kafkatopic.kafka.strimzi.io/messages created
 ```
 
-In OpenShift:
+> If you want to use a Kafka Topic with HA capabilities, there is a definition
+> in [kafkatopic-messages-ha.yml](./src/main/strimzi/topics/kafkatopic-messages-ha.yml) file.
 
-```bash
-$ oc apply -f src/main/strimzi/kafka.yml -n amq-streams
-kafka.kafka.strimzi.io/my-kafka created
-```
+There is a set of different users to connect to Kafka Cluster. We will deploy here to be used later.
 
-To deploy the Kafka Topic in Kubernetes:
-
-```bash
-$ kubectl apply -f src/main/strimzi/kafkatopic-one-topic.yml -n amq-streams
-kafkatopic.kafka.strimzi.io/one-topic created
-$ kubectl apply -f src/main/strimzi/kafkatopic-another-topic.yml -n amq-streams
-kafkatopic.kafka.strimzi.io/another-topic created
-```
-
-To deploy the Kafka Topic in Minikube or single node cluster:
-
-```bash
-$ kubectl apply -f src/main/strimzi/kafkatopic-one-topic-single.yml -n amq-streams
-kafkatopic.kafka.strimzi.io/one-topic created
-$ kubectl apply -f src/main/strimzi/kafkatopic-another-topic-single.yml -n amq-streams
-kafkatopic.kafka.strimzi.io/another-topic created
-```
-
-In OpenShift:
-
-```bash
-$ oc apply -f src/main/strimzi/kafkatopic-one-topic.yml -n amq-streams
-kafkatopic.kafka.strimzi.io/one-topic created
-$ oc apply -f src/main/strimzi/kafkatopic-another-topic.yml -n amq-streams
-kafkatopic.kafka.strimzi.io/another-topic created
+```shell script
+❯ kubectl apply -f src/main/strimzi/users/
+kafkauser.kafka.strimzi.io/application created
+kafkauser.kafka.strimzi.io/service-registry-scram created
+kafkauser.kafka.strimzi.io/service-registry-tls created
 ```
 
 After some minutes Kafka Cluster will be deployed:
 
-```bash
-$ kubectl get pod -n amq-streams
-NAME                                           READY   STATUS    RESTARTS   AGE
-my-kafka-entity-operator-8474bb6769-xqzt9      3/3     Running   0          1m
-my-kafka-kafka-0                               2/2     Running   0          2m
-my-kafka-kafka-1                               2/2     Running   0          2m
-my-kafka-kafka-2                               2/2     Running   0          2m
-my-kafka-kafka-exporter-5b4dff4858-8z9gw       1/1     Running   0          30s
-my-kafka-zookeeper-0                           2/2     Running   0          3m
-my-kafka-zookeeper-1                           2/2     Running   0          3m
-my-kafka-zookeeper-2                           2/2     Running   0          3m
-strimzi-cluster-operator-c8d786dcb-8rt9v       1/1     Running   2          5d
+```shell script
+❯ kubectl get pod
+NAME                                                READY   STATUS    RESTARTS   AGE
+apicurio-registry-operator-cbf6fcf57-d6shn          1/1     Running   0          4m32s
+my-kafka-entity-operator-6d9596458b-rl5w9           3/3     Running   0          59s
+my-kafka-kafka-0                                    2/2     Running   0          2m6s
+my-kafka-zookeeper-0                                1/1     Running   0          3m20s
+strimzi-cluster-operator-v0.19.0-7555cff6d9-vlgwp   1/1     Running   0          4m37s
 ```
+
+### Service Registry
+
+Service Registry needs a set of Kafka Topics to store schemas and metadata of them. We need to execute the following
+commands to create the KafkaTopics and to deploy an instance of Service Registry:
+
+```shell script
+❯ kubectl apply -f src/main/apicurio/topics/
+kafkatopic.kafka.strimzi.io/global-id-topic created
+kafkatopic.kafka.strimzi.io/storage-topic created
+❯ kubectl apply -f src/main/apicurio/service-registry.yml
+apicurioregistry.apicur.io/service-registry created
+```
+
+A new DeploymentConfig is created with the prefix ```service-registry-deployment-``` and a new route is
+created with the prefix ```service-registry-ingres-```. We must inspect it
+to get the route created to expose the Service Registry API.
+
+In Kubernetes we will use an ingress entry based with ```NodePort```. To get the ingress entry:
+
+```shell script
+❯ kubectl get deployment | grep service-registry-deployment
+service-registry-deployment-m57cq
+❯ kubectl expose deployment service-registry-deployment-m57cq --type=NodePort --port=8080
+service/service-registry-deployment-m57cq exposed
+❯ kubectl get service/service-registry-deployment-m57cq
+NAME                                TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
+service-registry-deployment-m57cq   NodePort   10.101.44.116   <none>        8080:31216/TCP   39s 
+❯ minikube service service-registry-deployment-m57cq --url -n amq-streams-demo
+http://192.168.39.227:31216
+```
+
+In OpenShift we only need to check the ```host``` attribute from the OpenShift Route:
+
+```shell script
+❯ oc get route
+NAME                                   HOST/PORT                                               PATH   SERVICES                            PORT    TERMINATION   WILDCARD
+service-registry-ingress-rjmr4-8gxsd   service-registry.amq-streams.apps-crc.testing           /      service-registry-service-bfj4n      <all>                 None
+```
+
+While few minutes until your Service Registry has deployed.
+
+The Service Registry Web Console and API endpoints will be available from: 
+
+* **Web Console**: http://<KUBERNETES_OPENSHIFT_SR_ROUTE_SERVICE_HOST>/ui/
+* **API REST**: http://KUBERNETES_OPENSHIFT_SR_ROUTE_SERVICE_HOST/api/
+
+Set up the ```apicurio.registry.url``` property in the ```pom.xml``` file the Service Registry url before to publish the
+schemas used by this application:
+
+```shell script
+❯ oc get route service-registry-ingress-rjmr4-8gxsd -o jsonpath='{.spec.host}'
+```
+
+To register the schemas in Service Registry execute:
+
+```shell script
+❯ mvn clean generate-sources -Papicurio
+```
+
+The next screenshot shows the schemas registed in the Web Console:
+
+![Artifacts registered in Apicurio Registry](./img/apicurio-registry-artifacts.png) 
 
 # Build and Deploy
 
@@ -118,46 +237,86 @@ Before we build the application we need to set up some values in ```src/main/res
 
 Review and set up the right values from your Kafka Cluster 
 
-* Kafka Bootstrap Servers: Kafka brokers are defined by a Kubernetes and OpenShift service created by Strimzi when
+* **Kafka Bootstrap Servers**: Kafka brokers are defined by a Kubernetes or OpenShift service created by Strimzi when
 the Kafka cluster is deployed. This service, called *cluster-name*-kafka-bootstrap exposes 9092 port for plain
 traffic and 9093 for encrypted traffic. 
 
 ```text
-kafka.bootstrap-servers=my-kafka-kafka-bootstrap=9092
+kafka.bootstrap-servers = my-kafka-kafka-bootstrap:9092
+
+spring.kafka.bootstrap-servers = ${kafka.bootstrap-servers}
+```
+
+* **Kafka User Credentials**: Kafka Cluster requires authentication and we need to set up the Kafka User credentials
+in our application (```kafka.user.*``` properties in ```application.properties``` file). Each KafkaUser has its own
+secret to store the password. This secret must be checked to extract the password for our user.
+
+To extract the password of the KafkaUser and declare as Environment Variable:
+
+```shell script
+❯ export KAFKA_USER_PASSWORD=$(kubectl get secret application -o jsonpath='{.data.password}' | base64 -d)
+```
+
+It is a best practice use directly the secret as variable in our deployment in Kubernetes or OpenShift. We could do
+it declaring the variable in the container spec as:
+
+```yaml
+spec:
+  template:
+    spec:
+      containers:
+        - env:
+          - name: KAFKA_USER_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: application
+```
+
+There is a deployment definition in [deployment.yml](./src/main/jkube/deployment.yml) file. This file will be used
+by JKube to deploy our application in Kubernetes or OpenShift.
+
+* **Service Registry API Endpoint**: Avro Serde classes need to communicate with the Service Registry API to check and
+validate the schemas. 
+
+```text
+apicurio.registry.url = http://service-registry.amq-streams-demo.apps-crc.testing/api
 ```
 
 To build the application:
 
-```bash
-$ mvn clean package
+```shell script
+❯ mvn clean package
 ```
 
 To run locally:
 
-```bash
-$ mvn spring-boot:run
+```shell script
+❯ export KAFKA_USER_PASSWORD=$(kubectl get secret application -o jsonpath='{.data.password}' | base64 -d)
+❯ mvn spring-boot:run
 ```
 
 Or you can deploy into Kubernetes or OpenShift platform using [Eclipse JKube](https://github.com/eclipse/jkube) Maven Plug-ins:
 
-To deploy the application in Kubernetes:
+To deploy the application using the Kubernetes Maven Plug-In:
 
-```bash
-$ mvn k8s:resource k8s:build k8s:push k8s:apply -Pkubernetes -Djkube.build.strategy=jib
+```shell script
+❯ mvn package k8s:resource k8s:build k8s:push k8s:apply -Pkubernetes -Djkube.build.strategy=jib
 ```
 
-To deploy the application in OpenShift:
+To deploy the application using the OpenShift Maven Plug-In (only valid for OpenShift Platform):
 
-```bash
-$ mvn oc:resource oc:build oc:apply -Popenshift
+```shell script
+❯ mvn package oc:resource oc:build oc:apply -Popenshift
 ```
 
 To deploy the application in Minikube:
 
-```bash
-$ eval $(minikube docker-env)
-$ mvn k8s:resource k8s:build k8s:apply -Pkubernetes
+```shell script
+❯ eval $(minikube docker-env)
+❯ mvn package k8s:resource k8s:build k8s:apply -Pkubernetes
 ```
+
 # REST API
 
 REST API is available from a Swagger UI at:
@@ -169,40 +328,29 @@ http://<KUBERNETES_OPENSHIFT_ROUTE_SERVICE_HOST>/swagger-ui.html
 **KUBERNETES_OPENSHIFT_ROUTE_SERVICE_HOST** will be the route create on Kubernetes or OpenShift to expose outside the
 service. 
 
-To get the route the following command in Kubernetes give you the host:
+To get the route the following command in OpenShift give you the host:
 
-```bash
-$ kubectl get route kafka-clients-sb-sample -o jsonpath='{.spec.host}'
-```
-
-In OpenShift:
-
-```bash
-$ oc get route kafka-clients-sb-sample -o jsonpath='{.spec.host}'
+```shell script
+❯ oc get route kafka-clients-sb-sample -o jsonpath='{.spec.host}'
 ```
 
 There are two groups to manage a topic from a Kafka Cluster.
 
-* **Producer**: Send messages to a topic 
-* **Consumer**: Consume messages from a topic
+* **Producer**: Send messageDTOS to a topic 
+* **Consumer**: Consume messageDTOS from a topic
 
 ## Producer REST API
 
 Sample REST API to send messages to a Kafka Topic.
-
-```text
-http://<KUBERNETES_OPENSHIFT_ROUTE_SERVICE_HOST>/swagger-ui.html#/producer-controller
-```
-
-The most common parameters for some operations:
+Parameters:
 
 * **topicName**: Topic Name
-* **message**: Message content based in a custom message:
+* **messageDTO**: Message content based in a custom messageDTO:
 
 Model:
 
 ```text
-CustomMessage {
+MessageDTO {
   key (integer, optional): Key to identify this message,
   timestamp (string, optional, read only): Timestamp,
   content (string): Content,
@@ -213,8 +361,8 @@ CustomMessage {
 
 Simple Sample:
 
-```bash
-$ curl -X POST http://$(oc get route kafka-clients-sb-sample -o jsonpath='{.spec.host}')/producer/kafka/one-topic \
+```shell script
+❯ curl -X POST http://$(oc get route kafka-clients-sb-sample -o jsonpath='{.spec.host}')/producer/kafka/messages \
 -H "Content-Type:application/json" -d '{"content": "Simple message"}' | jq
 {
   "key": null,
@@ -228,19 +376,21 @@ $ curl -X POST http://$(oc get route kafka-clients-sb-sample -o jsonpath='{.spec
 With Minikube:
 
 ```shell script
-$ curl $(minikube ip):$(kubectl get svc kafka-clients-sb-sample -n amq-streams -o jsonpath='{.spec.ports[].nodePort}')/producer/kafka/one-topic -H "Content-Type:application/json" -d '{"content": "Simple message from Minikube"}'
-{"key":null,"timestamp":1596203271368,"content":"Simple message from Minikube","partition":0,"offset":4}
+❯ curl $(minikube ip):$(kubectl get svc kafka-clients-sb-sample -o jsonpath='{.spec.ports[].nodePort}')/producer/kafka/messages \
+-H "Content-Type:application/json" -d '{"content": "Simple message from Minikube"}' | jq
+{
+  "key": null,
+  "timestamp": 1596203271368,
+  "content": "Simple message from Minikube",
+  "partition": 0,
+  "offset": 4
+}
 ```
 
 ## Consumer REST API
 
 Sample REST API to consume messages from a Kafka Topic.
-
-```text
-http://<KUBERNETES_OPENSHIFT_ROUTE_SERVICE_HOST>/swagger-ui.html#/consumer-controller
-```
-
-The most common parameters for some operations:
+Parameters:
 
 * **topicName**: Topic Name (Required)
 * **partition**: Number of the partition to consume (Optional)
@@ -248,15 +398,15 @@ The most common parameters for some operations:
 
 Simple Sample:
 
-```bash
-$ curl -v "http://$(oc get route kafka-clients-sb-sample -o jsonpath='{.spec.host}')/consumer/kafka/one-topic?commit=true&partition=2" | jq
+```shell script
+❯ curl -v "http://$(oc get route kafka-clients-sb-sample -o jsonpath='{.spec.host}')/consumer/kafka/messages?commit=true&partition=0" | jq
 {
-  "customMessages": [
+  "messages": [
     {
       "key": null,
       "timestamp": 1581087539350,
       "content": "Simple message",
-      "partition": 2,
+      "partition": 0,
       "offset": 0
     },
     ...
@@ -264,7 +414,7 @@ $ curl -v "http://$(oc get route kafka-clients-sb-sample -o jsonpath='{.spec.hos
       "key": null,
       "timestamp": 1581087584266,
       "content": "Simple message",
-      "partition": 2,
+      "partition": 0,
       "offset": 3
     }
   ]
@@ -274,6 +424,26 @@ $ curl -v "http://$(oc get route kafka-clients-sb-sample -o jsonpath='{.spec.hos
 With Minikube:
 
 ```shell script
-$ curl $(minikube ip):$(kubectl get svc kafka-clients-sb-sample -n amq-streams -o jsonpath='{.spec.ports[].nodePort}')"/consumer/kafka/one-topic?commit=true&partition=0"
-{"customMessages":[{"key":null,"timestamp":1596203271368,"content":"Simple message from Minikube","partition":0,"offset":4}]}
+❯ curl $(minikube ip):$(kubectl get svc kafka-clients-sb-sample -o jsonpath='{.spec.ports[].nodePort}')"/consumer/kafka/messages?commit=true&partition=0" | jq
+{
+  "messages":[
+    {
+      "key": null,
+      "timestamp": 1596203271368,
+      "content": "Simple message from Minikube",
+      "partition": 0,
+      "offset": 4
+    }
+  ]
+}
 ```
+
+That is! You have been deployed a full stack of components to produce and consume checked and valid messages using
+a schema declared. Congratulations!.
+
+## Main References
+
+* [Strimzi](https://strimzi.io/)
+* [Apicurio](https://www.apicur.io/)
+* [OperatorHub - Strimzi](https://operatorhub.io/operator/strimzi-kafka-operator)
+* [OperatorHub - Apicurio Registry](https://operatorhub.io/operator/apicurio-registry)
