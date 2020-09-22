@@ -1,7 +1,31 @@
-# Kafka Clients on Spring Boot Sample
+# Kafka Clients on Spring Boot Sample (Quarkus Edition)
+
+## :rocket: :sparkles: :rotating_light: QUARKUS EDITION (WIP) :rotating_light: :sparkles: :rocket:
+
+This branch is refactored to be a full-compliant [Quarkus](https://quarkus.io/) application.
+
+The following components were refactored from Spring Boot to the Quarkus Extensions for Spring:
+
+| Spring Boot Dependency | Quarkus Extension for Spring |
+|------------------------|------------------------------|
+| Spring Dependency Injection | [Quarkus Extension for Spring DI API](https://quarkus.io/guides/spring-di) |
+| Spring Boot Configuration | [Quarkus Extension for Spring Boot Properties API](https://quarkus.io/guides/spring-boot-properties)
+| spring-boot-starter-web | [Quarkus Extension for Spring Web API](https://quarkus.io/guides/spring-web) |
+| springdoc-openapi-ui | [OpenAPI and Swagger UI](https://quarkus.io/guides/openapi-swaggerui) |
+| spring-kafka | [Kafka with Reactive Messaging](https://quarkus.io/guides/kafka) |
+| avro | Not documented (Experimental extension) |
+| apicurio-registry-utils-serde | [Apicurio Registry](https://github.com/Apicurio/apicurio-registry) |
+
+This new version is really fast (less than 2 seconds) ... like a :rocket: 
+
+```text
+ 
+```
+
+## :rocket: :sparkles: :rotating_light: QUARKUS EDITION :rotating_light: :sparkles: :rocket: 
 
 This sample project demonstrates how to use [Kafka Clients](https://mvnrepository.com/artifact/org.apache.kafka/kafka-clients)
-and [Spring Kafka](https://spring.io/projects/spring-kafka) on Spring Boot to send and consume messages from an
+and [Spring Kafka](https://spring.io/projects/spring-kafka) on Quarkus to send and consume messages from an
 [Apache Kafka](https://kafka.apache.org/) cluster. The Apache Kafka cluster is operated by [Strimzi](https://strimzi.io/)
 operator deployed on a Kubernetes or OpenShift Platform. These messages will be validated by a Schema Registry or Service Registry
 operated by [Apicurio](https://www.apicur.io/registry/docs/apicurio-registry/index.html#intro-to-the-registry) operator.

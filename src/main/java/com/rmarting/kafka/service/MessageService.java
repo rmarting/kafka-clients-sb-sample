@@ -9,18 +9,28 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.TopicPartition;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.reactive.messaging.Channel;
+import org.eclipse.microprofile.reactive.messaging.Emitter;
+import org.eclipse.microprofile.reactive.messaging.Metadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.SendResult;
+// Kafka Templates provided by Reactive System
+//import org.springframework.kafka.core.KafkaTemplate;
+//import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -38,22 +48,37 @@ public class MessageService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageService.class);
 
-    private ObjectFactory<Producer<String, Message>> producer;
+    // Not implemented in Spring DI
+    //private ObjectFactory<Producer<String, Message>> producer;
+    @Autowired
+    Producer<String, Message> producer;
 
-    private ObjectFactory<Consumer<String, Message>> consumer;
+    // Not implemented in Spring DI
+    //private ObjectFactory<Consumer<String, Message>> consumer;
+    @Autowired
+    Consumer<String, Message> consumer;
 
-    private KafkaTemplate<String, Message> kafkaTemplate;
+    // Spring Kafka not longer needed
+    // private KafkaTemplate<String, Message> kafkaTemplate;
+    @Inject
+    @Channel("messages-out")
+    Emitter<Message> messageEmitter;
 
-    @Value("${consumer.poolTimeout}")
-    private Long poolTimeout;
+    @Value("${app.consumer.poolTimeout}")
+    Long poolTimeout;
 
-    public MessageService(ObjectFactory<Producer<String, Message>> producer,
-                          ObjectFactory<Consumer<String, Message>> consumer,
-                          KafkaTemplate<String, Message> kafkaTemplate) {
-        this.consumer = consumer;
-        this.producer = producer;
-        this.kafkaTemplate = kafkaTemplate;
-    }
+//    public MessageService(ObjectFactory<Producer<String, Message>> producer,
+//                          ObjectFactory<Consumer<String, Message>> consumer,
+//                          KafkaTemplate<String, Message> kafkaTemplate) {
+//        this.consumer = consumer;
+//        this.producer = producer;
+//        this.kafkaTemplate = kafkaTemplate;
+//    }
+
+//    public MessageService(Producer<String, Message> producer, Consumer<String, Message> consumer) {
+//        this.producer = producer;
+//        this.consumer = consumer;
+//    }
 
     public MessageDTO publishSync(final @NotEmpty String topicName, final @NotNull MessageDTO messageDTO) {
         return publishRawMessage(topicName, messageDTO, false);
@@ -84,7 +109,8 @@ public class MessageService {
         }
 
         // Local instance (prototype)
-        Producer<String, Message> localProducer = producer.getObject();
+        //Producer<String, Message> localProducer = producer.getObject();
+        Producer<String, Message> localProducer = producer;
 
         try {
             if (async) {
@@ -95,6 +121,7 @@ public class MessageService {
                     // Update model
                     messageDTO.setPartition(metadata.partition());
                     messageDTO.setOffset(metadata.offset());
+                    messageDTO.setTimestamp(message.getTimestamp());
                 }).get();
             } else {
                 RecordMetadata metadata = localProducer.send(record).get();
@@ -104,6 +131,7 @@ public class MessageService {
                 // Update model
                 messageDTO.setPartition(metadata.partition());
                 messageDTO.setOffset(metadata.offset());
+                messageDTO.setTimestamp(message.getTimestamp());
             }
         } catch (ExecutionException e) {
             LOGGER.warn("Execution Error in sending record", e);
@@ -125,28 +153,44 @@ public class MessageService {
         message.setContent(messageDTO.getContent());
         message.setTimestamp(System.currentTimeMillis());
 
-        SendResult<String, Message> record = null;
+        CompletionStage completionStage = messageEmitter.send(message);
 
-        try {
-            if (null == messageDTO.getKey()) {
-                // Value as CustomMessage
-                record = kafkaTemplate.send(topicName, message).get();
-            } else {
-                // Value as CustomMessage
-                record = kafkaTemplate.send(topicName, messageDTO.getKey(), message).get();
-            }
+        // TODO Get Metadata from completionStage
+        completionStage.toCompletableFuture().join();
 
-            LOGGER.info("Record sent to partition {} with offset {}",
-                    record.getRecordMetadata().partition(), record.getRecordMetadata().offset());
+//        //MyMetadata metadata = new MyMetadata();
+//        messageEmitter.send(org.eclipse.microprofile.reactive.messaging.Message.of(message, Metadata.of(metadata),
+//                () -> {
+//                    // Called when the message is acknowledged.
+//                    return CompletableFuture.completedFuture(null);
+//                },
+//                reason -> {
+//                    // Called when the message is acknowledged negatively.
+//                    return CompletableFuture.completedFuture(null);
+//                }));
 
-            // Update model
-            messageDTO.setPartition(record.getRecordMetadata().partition());
-            messageDTO.setOffset(record.getRecordMetadata().offset());
-        } catch (ExecutionException e) {
-            LOGGER.warn("Execution Error in sending record", e);
-        } catch (InterruptedException e) {
-            LOGGER.warn("Interrupted Error in sending record", e);
-        }
+//        SendResult<String, Message> record = null;
+//
+//        try {
+//            if (null == messageDTO.getKey()) {
+//                // Value as CustomMessage
+//                record = kafkaTemplate.send(topicName, message).get();
+//            } else {
+//                // Value as CustomMessage
+//                record = kafkaTemplate.send(topicName, messageDTO.getKey(), message).get();
+//            }
+//
+//            LOGGER.info("Record sent to partition {} with offset {}",
+//                    record.getRecordMetadata().partition(), record.getRecordMetadata().offset());
+//
+//            // Update model
+//            messageDTO.setPartition(record.getRecordMetadata().partition());
+//            messageDTO.setOffset(record.getRecordMetadata().offset());
+//        } catch (ExecutionException e) {
+//            LOGGER.warn("Execution Error in sending record", e);
+//        } catch (InterruptedException e) {
+//            LOGGER.warn("Interrupted Error in sending record", e);
+//        }
 
         return messageDTO;
     }
@@ -156,7 +200,8 @@ public class MessageService {
         MessageListDTO messageListDTO = new MessageListDTO();
 
         // Local instance (prototype)
-        Consumer<String, Message> localConsumer = consumer.getObject();
+        //Consumer<String, Message> localConsumer = consumer.getObject();
+        Consumer<String, Message> localConsumer = consumer;
 
         try {
             // Assign to partition defined

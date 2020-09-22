@@ -2,13 +2,21 @@ package com.rmarting.kafka.api;
 
 import com.rmarting.kafka.dto.MessageDTO;
 import com.rmarting.kafka.service.MessageService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
+// OpenAPI provided by Microprofile
+//import io.swagger.v3.oas.annotations.Operation;
+//import io.swagger.v3.oas.annotations.Parameter;
+//import io.swagger.v3.oas.annotations.media.Content;
+//import io.swagger.v3.oas.annotations.media.Schema;
+//import io.swagger.v3.oas.annotations.responses.ApiResponse;
+//import io.swagger.v3.oas.annotations.responses.ApiResponses;
+//import io.swagger.v3.oas.annotations.tags.Tag;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -28,14 +36,14 @@ public class ProducerController {
 		this.messageService = messageService;
 	}
 
-	@Operation(summary = "Send a message synchronously using the Kafka Client Producer API", tags = { "producer"})
-    @ApiResponses(value = {
-		@ApiResponse(
+	@Operation(summary = "Send a message synchronously using the Kafka Client Producer API"/*, tags = { "producer"}*/)
+    @APIResponses(value = {
+		@APIResponse(
 				responseCode = "200",
 				description = "Message sent",
 				content = @Content(schema = @Schema(implementation = MessageDTO.class))),
-		@ApiResponse(responseCode = "404", description = "Message not sent"),
-   		@ApiResponse(responseCode = "500", description = "Internal Server Error")
+		@APIResponse(responseCode = "404", description = "Message not sent"),
+   		@APIResponse(responseCode = "500", description = "Internal Server Error")
 	})
 	@PostMapping(value = "/kafka/{topicName}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<MessageDTO> sendToTopic(
@@ -48,14 +56,14 @@ public class ProducerController {
 		return ResponseEntity.ok(messageDTO);
 	}
 
-	@Operation(summary = "Send a message asynchronously using the Kafka Client Producer API", tags = { "producer"})
-	@ApiResponses(value = {
-			@ApiResponse(
+	@Operation(summary = "Send a message asynchronously using the Kafka Client Producer API"/*, tags = { "producer"}*/)
+	@APIResponses(value = {
+			@APIResponse(
 					responseCode = "200",
 					description = "Message sent",
 					content = @Content(schema = @Schema(implementation = MessageDTO.class))),
-			@ApiResponse(responseCode = "404", description = "Message not sent"),
-			@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			@APIResponse(responseCode = "404", description = "Message not sent"),
+			@APIResponse(responseCode = "500", description = "Internal Server Error")
 	})
 	@PostMapping(value = "/kafka/async/{topicName}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<MessageDTO> sendToTopicAsync(
@@ -68,14 +76,14 @@ public class ProducerController {
 		return ResponseEntity.ok(messageDTO);
 	}
 
-	@Operation(summary = "Send a message synchronously using the Spring Kafka KafkaTemplate API", tags = { "producer"})
-	@ApiResponses(value = {
-			@ApiResponse(
+//	@Operation(summary = "Send a message synchronously using the Spring Kafka KafkaTemplate API"/*, tags = { "producer"}*/)
+	@APIResponses(value = {
+			@APIResponse(
 					responseCode = "200",
 					description = "Message sent",
 					content = @Content(schema = @Schema(implementation = MessageDTO.class))),
-			@ApiResponse(responseCode = "404", description = "Message not sent"),
-			@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			@APIResponse(responseCode = "404", description = "Message not sent"),
+			@APIResponse(responseCode = "500", description = "Internal Server Error")
 	})
 	@PostMapping(value = "/spring/{topicName}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<MessageDTO> sendToTopicBySpring(

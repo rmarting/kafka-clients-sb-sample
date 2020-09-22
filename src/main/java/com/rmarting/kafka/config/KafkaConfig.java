@@ -17,16 +17,21 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
+// Not provided by Spring DI
+//import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+//import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
-import org.springframework.kafka.core.DefaultKafkaProducerFactory;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.core.ProducerFactory;
+//import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+//import org.springframework.kafka.core.KafkaTemplate;
+//import org.springframework.kafka.core.ProducerFactory;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.RequestScoped;
+import javax.enterprise.inject.Produces;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
@@ -35,41 +40,41 @@ import java.util.Properties;
 @Configuration
 public class KafkaConfig {
 
-    @Value("${kafka.bootstrap-servers:localhost:8080}")
-    private String kafkaBrokers;
+    @Value("${app.kafka.bootstrap-servers:localhost:8080}")
+    String kafkaBrokers;
 
-    @Value("${kafka.user.name}")
-    private String kafkaUser;
+    @Value("${app.kafka.user.name}")
+    String kafkaUser;
 
-    @Value("${kafka.user.password}")
-    private String kafkaPassword;
+    @Value("${app.kafka.user.password}")
+    String kafkaPassword;
 
-    @Value("${kafka.security.protocol}")
-    private String kafkaSecurityProtocol;
+    @Value("${app.kafka.security.protocol}")
+    String kafkaSecurityProtocol;
 
-    @Value("${producer.clienId:kafka-client-sb-producer-client}")
-    private String producerClientId;
+    @Value("${app.producer.clienId:kafka-client-sb-producer-client}")
+    String producerClientId;
 
-    @Value("${producer.acks:1}")
-    private String acks;
+    @Value("${app.producer.acks:1}")
+    String acks;
 
-    @Value("${consumer.groupId:kafka-client-sb-consumer}")
-    private String consumerGroupId;
+    @Value("${app.consumer.groupId:kafka-client-sb-consumer}")
+    String consumerGroupId;
 
-    @Value("${consumer.clientId:kafka-client-sb-consumer-client}")
-    private String consumerClientId;
+    @Value("${app.consumer.clientId:kafka-client-sb-consumer-client}")
+    String consumerClientId;
 
-    @Value("${consumer.maxPoolRecords:1000}")
-    private String maxPoolRecords;
+    @Value("${app.consumer.maxPoolRecords:1000}")
+    String maxPoolRecords;
 
-    @Value("${consumer.offsetReset:earliest}")
-    private String offsetReset;
+    @Value("${app.consumer.offsetReset:earliest}")
+    String offsetReset;
 
-    @Value("${consumer.autoCommit:false}")
-    private String autoCommit;
+    @Value("${app.consumer.autoCommit:false}")
+    String autoCommit;
 
     @Value("${apicurio.registry.url:http://localhost:8080/api}")
-    private String serviceRegistryUrl;
+    String serviceRegistryUrl;
 
     private String getHostname() {
         try {
@@ -80,7 +85,9 @@ public class KafkaConfig {
     }
 
     @Bean
-    @Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+    // Not provided by Quarkus Spring DI Extension
+    //@Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+    @Scope("prototype")
     public Producer<String, Message> createProducer() {
         Properties props = new Properties();
 
@@ -126,7 +133,9 @@ public class KafkaConfig {
     }
 
     @Bean
-    @Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+    // Not provided by Quarkus Spring DI Extension
+    //@Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+    @Scope("prototype")
     public Consumer<String, Message> createConsumer() {
         Properties props = new Properties();
 
@@ -184,16 +193,17 @@ public class KafkaConfig {
         return new KafkaConsumer<>(props);
     }
 
-    @Bean
-    public ProducerFactory<String, Message> producerFactory(KafkaProperties kafkaProperties) {
-        Map<String, Object> configProps = kafkaProperties.buildProducerProperties();
-
-        return new DefaultKafkaProducerFactory<>(configProps);
-    }
-
-    @Bean
-    public KafkaTemplate<String, Message> kafkaTemplate(KafkaProperties kafkaProperties) {
-        return new KafkaTemplate<>(producerFactory(kafkaProperties));
-    }
+// Spring Kafka not longer needed
+//    @Bean
+//    public ProducerFactory<String, Message> producerFactory(KafkaProperties kafkaProperties) {
+//        Map<String, Object> configProps = kafkaProperties.buildProducerProperties();
+//
+//        return new DefaultKafkaProducerFactory<>(configProps);
+//    }
+//
+//    @Bean
+//    public KafkaTemplate<String, Message> kafkaTemplate(KafkaProperties kafkaProperties) {
+//        return new KafkaTemplate<>(producerFactory(kafkaProperties));
+//    }
 
 }

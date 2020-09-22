@@ -1,6 +1,8 @@
 package com.rmarting.kafka.dto;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+// OpenAPI provided by Microprofile
+//import io.swagger.v3.oas.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.io.Serializable;
 import java.util.ArrayList;

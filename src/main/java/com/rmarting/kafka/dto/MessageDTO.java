@@ -1,6 +1,8 @@
 package com.rmarting.kafka.dto;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+// OpenAPI provided by Microprofile
+//import io.swagger.v3.oas.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.io.Serializable;
 
@@ -17,10 +19,10 @@ public class MessageDTO implements Serializable {
 	@Schema(description = "Content.", required = true, example = "Simple message")
 	private String content;
 
-	@Schema(description = "Partition number.", required = false, accessMode = Schema.AccessMode.READ_ONLY)
+	@Schema(description = "Partition number.", required = false, readOnly = true /*accessMode = Schema.AccessMode.READ_ONLY*/)
 	private int partition;
 
-	@Schema(description = "Offset in the partition.", required = false, accessMode = Schema.AccessMode.READ_ONLY)
+	@Schema(description = "Offset in the partition.", required = false, readOnly = true /*accessMode = Schema.AccessMode.READ_ONLY*/)
 	private long offset;
 	
 	public String getKey() {

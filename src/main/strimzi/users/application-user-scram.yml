@@ -18,7 +18,7 @@ spec:
         operation: Read
       - resource:
           type: group
-          name: spring-kafka-clients-sb-sample-group
+          name: kafka-client-sb-consumer-mp-incoming-channel
         operation: Read
       # Rules for the messages topic
       - resource:

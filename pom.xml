@@ -1,36 +1,59 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
+	<!-- Spring Boot Parent not longer needed
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>2.3.2.RELEASE</version>
-		<relativePath /> <!-- lookup parent from repository -->
+		<relativePath />
 	</parent>
+	-->
 
 	<groupId>com.rmarting.kafka</groupId>
 	<artifactId>kafka-clients-sb-sample</artifactId>
-	<version>2.5.1-SNAPSHOT</version>
+	<version>3.0.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<java.version>8</java.version>
+		<!-- Quarkus only supports Java 11 -->
+		<!--<java.version>8</java.version>-->
+		<maven.compiler.source>11</maven.compiler.source>
+		<maven.compiler.target>11</maven.compiler.target>
+
 		<!-- Kafka Clients -->
 		<kafka-clients.version>2.5.0</kafka-clients.version>
-		<!-- Swagger -->
-		<springdoc-openapi-ui.version>1.4.3</springdoc-openapi-ui.version>
+		<!-- Swagger is provided by Quarkus -->
+		<!--<springdoc-openapi-ui.version>1.4.3</springdoc-openapi-ui.version>-->
 		<!-- Avro -->
 		<avro.version>1.10.0</avro.version>
 		<!-- Apicurio Registry -->
-		<apicurio.version>1.3.0.Final</apicurio.version>
+		<apicurio.version>1.3.1.Final</apicurio.version>
 		<!--<apicurio.registry.url>http://localhost:8080/api</apicurio.registry.url>-->
 		<apicurio.registry.url>http://service-registry.amq-streams-demo.apps-crc.testing/api</apicurio.registry.url>
 		<!-- JKube -->
 		<jkube.enricher.jkube-service.type>NodePort</jkube.enricher.jkube-service.type>
+		<!-- Quarkus -->
+		<quarkus.platform.version>1.8.1.Final</quarkus.platform.version>
 	</properties>
 
+	<!-- Quarkus BOM -->
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>io.quarkus</groupId>
+				<artifactId>quarkus-universe-bom</artifactId>
+				<version>${quarkus.platform.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
 	<dependencies>
+		<!-- Spring Boot not longer needed -->
+		<!--
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
@@ -39,32 +62,77 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
+		-->
+		<!-- Quarkus Spring Extensions -->
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-spring-di</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-spring-web</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-spring-boot-properties</artifactId>
+		</dependency>
+
+		<!-- Health Check -->
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-smallrye-health</artifactId>
+		</dependency>
 
 		<!-- Open API -->
+		<!--
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-ui</artifactId>
 			<version>${springdoc-openapi-ui.version}</version>
 		</dependency>
+		-->
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-smallrye-openapi</artifactId>
+		</dependency>
 
-		<!-- Spring Kafka -->
+		<!-- Spring Kafka not longer needed -->
+		<!--
 		<dependency>
 			<groupId>org.springframework.kafka</groupId>
 			<artifactId>spring-kafka</artifactId>
 		</dependency>
+		-->
 
-		<!-- Kafka Clients -->
+		<!-- Kafka Clients and Reactive Messaging by Quarkus -->
+		<!--
 		<dependency>
 			<groupId>org.apache.kafka</groupId>
 			<artifactId>kafka-clients</artifactId>
 			<version>${kafka-clients.version}</version>
 		</dependency>
+		-->
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-kafka-client</artifactId>
+		</dependency>
+		<!-- Reactive Messaging -->
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-smallrye-reactive-messaging-kafka</artifactId>
+		</dependency>
 
-		<!-- Avro Schemas Dependency -->
+		<!-- Avro Schemas Dependency by Quarkus (Experimental) -->
+		<!--
 		<dependency>
 			<groupId>org.apache.avro</groupId>
 			<artifactId>avro</artifactId>
 			<version>${avro.version}</version>
+		</dependency>
+		-->
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-avro</artifactId>
 		</dependency>
 
 		<!-- Apicurio Serializers/Deserializers -->
@@ -73,14 +141,10 @@
 			<artifactId>apicurio-registry-utils-serde</artifactId>
 			<version>${apicurio.version}</version>
 		</dependency>
-		<!-- https://github.com/Apicurio/apicurio-registry/issues/702 -->
-		<dependency>
-			<groupId>org.jboss.resteasy</groupId>
-			<artifactId>resteasy-client</artifactId>
-			<version>4.5.6.Final</version>
-		</dependency>
 
 		<!-- Test Dependencies -->
+		<!-- Spring Boot not longer needed -->
+		<!--
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
@@ -97,15 +161,33 @@
 			<artifactId>spring-kafka-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		-->
 	</dependencies>
 
 	<build>
 		<finalName>kafka-clients-sb-sample</finalName>
 
 		<plugins>
+			<!-- Spring Boot not longer needed -->
+			<!--
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+			-->
+			<plugin>
+				<groupId>io.quarkus</groupId>
+				<artifactId>quarkus-maven-plugin</artifactId>
+				<version>${quarkus.platform.version}</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>generate-code</goal>
+							<goal>generate-code-tests</goal>
+							<goal>build</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 
 			<!-- Avro Maven Plug-In to generate classes from schemas (files *.avsc) -->
@@ -217,6 +299,41 @@
 					</plugin>
 				</plugins>
 			</build>
+		</profile>
+
+		<profile>
+			<id>native</id>
+			<activation>
+				<property>
+					<name>native</name>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<artifactId>maven-failsafe-plugin</artifactId>
+						<version>3.0.0-M5</version>
+						<executions>
+							<execution>
+								<goals>
+									<goal>integration-test</goal>
+									<goal>verify</goal>
+								</goals>
+								<configuration>
+									<systemPropertyVariables>
+										<native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
+										<java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+										<!--<maven.home>${maven.home}</maven.home>-->
+									</systemPropertyVariables>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+			<properties>
+				<quarkus.package.type>native</quarkus.package.type>
+			</properties>
 		</profile>
 	</profiles>
 </project>

@@ -2,13 +2,21 @@ package com.rmarting.kafka.api;
 
 import com.rmarting.kafka.dto.MessageListDTO;
 import com.rmarting.kafka.service.MessageService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
+// OpenAPI provided by Microprofile
+//import io.swagger.v3.oas.annotations.Operation;
+//import io.swagger.v3.oas.annotations.Parameter;
+//import io.swagger.v3.oas.annotations.media.Content;
+//import io.swagger.v3.oas.annotations.media.Schema;
+//import io.swagger.v3.oas.annotations.responses.ApiResponse;
+//import io.swagger.v3.oas.annotations.responses.ApiResponses;
+//import io.swagger.v3.oas.annotations.tags.Tag;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,18 +38,18 @@ public class ConsumerController {
         this.messageService = messageService;
     }
 
-    @Value("${consumer.poolTimeout}")
-    private Long poolTimeout;
+    @Value("${app.consumer.poolTimeout}")
+    Long poolTimeout;
 
-    @Operation(summary = "Get a list of records from a topic", tags = {"consumer"})
-    @ApiResponses(value = {
-            @ApiResponse(
+//    @Operation(summary = "Get a list of records from a topic"/*, tags = {"consumer"}*/)
+    @APIResponses(value = {
+            @APIResponse(
                     responseCode = "200",
                     description = "List of records from topic",
                     content = @Content(schema = @Schema(implementation = MessageListDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Not records in topic"),
-            @ApiResponse(responseCode = "500", description = "Internal Server Error")})
-    @GetMapping(value = "/kafka/{topicName}", produces = MediaType.APPLICATION_JSON_VALUE)
+            @APIResponse(responseCode = "404", description = "Not records in topic"),
+            @APIResponse(responseCode = "500", description = "Internal Server Error")})
+    @GetMapping(value = "/kafka/{topicName}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<MessageListDTO> pollFromTopic(
             @Parameter(description = "Topic name", required = true) @PathVariable String topicName,
             @Parameter(description = "Commit results", required = false) @RequestParam(defaultValue = "true") boolean commit,

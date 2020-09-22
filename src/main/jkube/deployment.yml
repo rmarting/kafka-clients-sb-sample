@@ -20,20 +20,20 @@ spec:
           livenessProbe:
             failureThreshold: 3
             httpGet:
-              path: /actuator/health
-              port: 8080
+              path: /health/live
+              port: 8181
               scheme: HTTP
-            initialDelaySeconds: 180
+            initialDelaySeconds: 5
             periodSeconds: 10
             successThreshold: 1
             timeoutSeconds: 1
           readinessProbe:
             failureThreshold: 3
             httpGet:
-              path: /actuator/health
-              port: 8080
+              path: /health/ready
+              port: 8181
               scheme: HTTP
-            initialDelaySeconds: 10
+            initialDelaySeconds: 5
             periodSeconds: 10
             successThreshold: 1
             timeoutSeconds: 1
