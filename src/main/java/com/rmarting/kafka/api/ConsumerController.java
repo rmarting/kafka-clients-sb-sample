@@ -19,7 +19,9 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Scope;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -28,20 +30,18 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/consumer")
 @Tag(name = "consumer", description = "Operations to consume messages from a Kafka Cluster")
+@Scope("prototype")
 public class ConsumerController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsumerController.class);
 
-    private MessageService messageService;
-
-    public ConsumerController(MessageService messageService) {
-        this.messageService = messageService;
-    }
+    @Autowired
+    MessageService messageService;
 
     @Value("${app.consumer.poolTimeout}")
     Long poolTimeout;
 
-//    @Operation(summary = "Get a list of records from a topic"/*, tags = {"consumer"}*/)
+    @Operation(summary = "Get a list of records from a topic"/*, tags = {"consumer"}*/)
     @APIResponses(value = {
             @APIResponse(
                     responseCode = "200",

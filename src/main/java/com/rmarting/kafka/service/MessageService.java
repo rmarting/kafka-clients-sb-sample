@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Value;
 // Kafka Templates provided by Reactive System
 //import org.springframework.kafka.core.KafkaTemplate;
 //import org.springframework.kafka.support.SendResult;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
@@ -44,6 +45,7 @@ import java.util.concurrent.ExecutionException;
  * @author rmarting
  */
 @Service
+@Scope("prototype")
 public class MessageService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageService.class);

@@ -19,6 +19,8 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,15 +28,13 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/producer")
 @Tag(name = "producer", description = "Operations to produce messages to a Kafka Cluster")
+@Scope("prototype")
 public class ProducerController {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProducerController.class);
 
-	private MessageService messageService;
-
-	public ProducerController(MessageService messageService) {
-		this.messageService = messageService;
-	}
+	@Autowired
+	MessageService messageService;
 
 	@Operation(summary = "Send a message synchronously using the Kafka Client Producer API"/*, tags = { "producer"}*/)
     @APIResponses(value = {
@@ -76,7 +76,7 @@ public class ProducerController {
 		return ResponseEntity.ok(messageDTO);
 	}
 
-//	@Operation(summary = "Send a message synchronously using the Spring Kafka KafkaTemplate API"/*, tags = { "producer"}*/)
+	@Operation(summary = "Send a message synchronously using the Spring Kafka KafkaTemplate API"/*, tags = { "producer"}*/)
 	@APIResponses(value = {
 			@APIResponse(
 					responseCode = "200",
