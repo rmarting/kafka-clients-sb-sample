@@ -1,8 +1,8 @@
 # Kafka Clients on Spring Boot Sample (Quarkus Edition)
 
-## :rocket: :sparkles: :rotating_light: QUARKUS EDITION (WIP) :rotating_light: :sparkles: :rocket:
+## :rocket: :sparkles: :rotating_light: QUARKUS EDITION :rotating_light: :sparkles: :rocket:
 
-This branch is refactored to be a full-compliant [Quarkus](https://quarkus.io/) application.
+This branch is refactored to be use Spring Extensions of [Quarkus](https://quarkus.io/).
 
 The following components were refactored from Spring Boot to the Quarkus Extensions for Spring:
 
@@ -16,10 +16,13 @@ The following components were refactored from Spring Boot to the Quarkus Extensi
 | avro | Not documented (Experimental extension) |
 | apicurio-registry-utils-serde | [Apicurio Registry](https://github.com/Apicurio/apicurio-registry) |
 
-This new version is really fast (less than 2 seconds) ... like a :rocket: 
+**NOTE**: The files changed included the original code commented, and the new one added to complete the migration. This is
+only for academic proposal to show the differences in the same file.
+
+This new version is really fast, **2 seconds**, ... like a :rocket:. 
 
 ```text
- 
+2020-09-24 07:53:30,587 INFO  [io.quarkus] (main) kafka-clients-sb-sample 3.0.0-SNAPSHOT on JVM (powered by Quarkus 1.8.1.Final) started in 2.000s. Listening on: http://0.0.0.0:8181
 ```
 
 ## :rocket: :sparkles: :rotating_light: QUARKUS EDITION :rotating_light: :sparkles: :rocket: 

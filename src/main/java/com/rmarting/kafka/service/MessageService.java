@@ -9,13 +9,10 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.TopicPartition;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
-import org.eclipse.microprofile.reactive.messaging.Metadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 // Kafka Templates provided by Reactive System
@@ -25,12 +22,10 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
-import javax.inject.Singleton;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import java.time.Duration;
 import java.util.Collections;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 
@@ -159,17 +154,6 @@ public class MessageService {
 
         // TODO Get Metadata from completionStage
         completionStage.toCompletableFuture().join();
-
-//        //MyMetadata metadata = new MyMetadata();
-//        messageEmitter.send(org.eclipse.microprofile.reactive.messaging.Message.of(message, Metadata.of(metadata),
-//                () -> {
-//                    // Called when the message is acknowledged.
-//                    return CompletableFuture.completedFuture(null);
-//                },
-//                reason -> {
-//                    // Called when the message is acknowledged negatively.
-//                    return CompletableFuture.completedFuture(null);
-//                }));
 
 //        SendResult<String, Message> record = null;
 //

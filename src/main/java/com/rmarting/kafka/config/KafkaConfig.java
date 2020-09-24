@@ -17,7 +17,6 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.springframework.beans.factory.annotation.Value;
 // Not provided by Spring DI
 //import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -29,12 +28,8 @@ import org.springframework.context.annotation.Scope;
 //import org.springframework.kafka.core.KafkaTemplate;
 //import org.springframework.kafka.core.ProducerFactory;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.RequestScoped;
-import javax.enterprise.inject.Produces;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Map;
 import java.util.Properties;
 
 @Configuration

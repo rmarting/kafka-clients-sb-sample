@@ -77,7 +77,7 @@
 			<artifactId>quarkus-spring-boot-properties</artifactId>
 		</dependency>
 
-		<!-- Health Check -->
+		<!-- Quarkus Health Check -->
 		<dependency>
 			<groupId>io.quarkus</groupId>
 			<artifactId>quarkus-smallrye-health</artifactId>
@@ -91,6 +91,7 @@
 			<version>${springdoc-openapi-ui.version}</version>
 		</dependency>
 		-->
+		<!-- Quarkus OpenAPI Extension -->
 		<dependency>
 			<groupId>io.quarkus</groupId>
 			<artifactId>quarkus-smallrye-openapi</artifactId>
@@ -162,6 +163,7 @@
 			<scope>test</scope>
 		</dependency>
 		-->
+		<!-- TODO Add testing -->
 	</dependencies>
 
 	<build>
@@ -301,6 +303,7 @@
 			</build>
 		</profile>
 
+		<!-- Quarkus Native building profile -->
 		<profile>
 			<id>native</id>
 			<activation>
