@@ -3,11 +3,9 @@ kind: KafkaTopic
 metadata:
   labels:
     strimzi.io/cluster: my-kafka
-  name: storage-topic
+  name: kafkasql-journal
 spec:
-  partitions: 3
+  partitions: 1
   replicas: 1
-  # Uncomment this line if your Apache Kafka Cluster is deployed with an HA topology
-  #replicas: 3
   config:
     cleanup.policy: compact
