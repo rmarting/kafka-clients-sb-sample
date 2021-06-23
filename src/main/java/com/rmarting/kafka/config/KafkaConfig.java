@@ -1,12 +1,15 @@
 package com.rmarting.kafka.config;
 
 import com.rmarting.kafka.schema.avro.Message;
-import io.apicurio.registry.utils.serde.AbstractKafkaSerDe;
-import io.apicurio.registry.utils.serde.AbstractKafkaSerializer;
-import io.apicurio.registry.utils.serde.AvroKafkaDeserializer;
-import io.apicurio.registry.utils.serde.AvroKafkaSerializer;
-import io.apicurio.registry.utils.serde.avro.AvroDatumProvider;
-import io.apicurio.registry.utils.serde.strategy.TopicIdStrategy;
+
+import io.apicurio.registry.serde.AbstractKafkaSerDe;
+import io.apicurio.registry.serde.AbstractKafkaSerializer;
+import io.apicurio.registry.serde.SerdeConfig;
+import io.apicurio.registry.serde.avro.AvroDatumProvider;
+import io.apicurio.registry.serde.avro.AvroKafkaDeserializer;
+import io.apicurio.registry.serde.avro.AvroKafkaSerdeConfig;
+import io.apicurio.registry.serde.avro.AvroKafkaSerializer;
+import io.apicurio.registry.serde.strategy.TopicIdStrategy;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -102,16 +105,16 @@ public class KafkaConfig {
         props.putIfAbsent(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, AvroKafkaSerializer.class.getName());
 
         // Service Registry
-        props.putIfAbsent(AbstractKafkaSerDe.REGISTRY_URL_CONFIG_PARAM, serviceRegistryUrl);
+        props.putIfAbsent(SerdeConfig.REGISTRY_URL, serviceRegistryUrl);
         // Artifact Id Strategies (implementations of ArtifactIdStrategy)
         // Simple Topic Id Strategy (schema = topicName)
-        //props.putIfAbsent(AbstractKafkaSerializer.REGISTRY_ARTIFACT_ID_STRATEGY_CONFIG_PARAM, SimpleTopicIdStrategy.class.getName());
+        //props.putIfAbsent(SerdeConfig.ARTIFACT_RESOLVER_STRATEGY, SimpleTopicIdStrategy.class.getName());
         // Topic Id Strategy (schema = topicName-(key|value)) - Default Strategy
-        props.putIfAbsent(AbstractKafkaSerializer.REGISTRY_ARTIFACT_ID_STRATEGY_CONFIG_PARAM, TopicIdStrategy.class.getName());
+        props.putIfAbsent(SerdeConfig.ARTIFACT_RESOLVER_STRATEGY, TopicIdStrategy.class.getName());
         // Record Id Strategy (schema = full name of the schema (namespace.name))
-        //props.putIfAbsent(AbstractKafkaSerializer.REGISTRY_ARTIFACT_ID_STRATEGY_CONFIG_PARAM, RecordIdStrategy.class.getName());
+        //props.putIfAbsent(SerdeConfig.ARTIFACT_RESOLVER_STRATEGY, RecordIdStrategy.class.getName());
         // Topic Record Id Strategy (schema = topic name and the full name of the schema (topicName-namespace.name)
-        //props.putIfAbsent(AbstractKafkaSerializer.REGISTRY_ARTIFACT_ID_STRATEGY_CONFIG_PARAM, TopicRecordIdStrategy.class.getName());
+        //props.putIfAbsent(SerdeConfig.ARTIFACT_RESOLVER_STRATEGY, TopicRecordIdStrategy.class.getName());
 
         // Global Id Strategies (implementations of GlobalIdStrategy)
         //props.putIfAbsent(AbstractKafkaSerializer.REGISTRY_GLOBAL_ID_STRATEGY_CONFIG_PARAM, FindLatestIdStrategy.class.getName());
@@ -177,9 +180,9 @@ public class KafkaConfig {
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, offsetReset);
 
         // Service Registry Integration
-        props.put(AbstractKafkaSerDe.REGISTRY_URL_CONFIG_PARAM, serviceRegistryUrl);
+        props.put(SerdeConfig.REGISTRY_URL, serviceRegistryUrl);
         // Use Specific Avro classes instead of the GenericRecord class definition
-        props.put(AvroDatumProvider.REGISTRY_USE_SPECIFIC_AVRO_READER_CONFIG_PARAM, true);
+        props.put(AvroKafkaSerdeConfig.USE_SPECIFIC_AVRO_READER, true);
 
         return new KafkaConsumer<>(props);
     }
