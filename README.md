@@ -148,7 +148,7 @@ You could check that operators are successfully registered with the following co
 ❯ kubectl get csv
 NAME                                             DISPLAY                      VERSION              REPLACES                           PHASE
 apicurio-registry-operator.v1.0.0-v2.0.0.final   Apicurio Registry Operator   1.0.0-v2.0.0.final                                      Succeeded
-strimzi-cluster-operator.v0.23.0                 Strimzi                      0.23.0               strimzi-cluster-operator.v0.22.1   Succeeded
+strimzi-cluster-operator.v0.24.0                 Strimzi                      0.24.0               strimzi-cluster-operator.v0.23.0   Succeeded
 ```
 
 or verify the pods are running:
@@ -157,7 +157,7 @@ or verify the pods are running:
 ❯ kubectl get pod
 NAME                                              READY   STATUS    RESTARTS   AGE
 apicurio-registry-operator-598fff6985-xplll       1/1     Running   0          47m
-strimzi-cluster-operator-v0.23.0-9d5c6b6d-qqxjx   1/1     Running   0          47m
+strimzi-cluster-operator-v0.24.0-9d5c6b6d-qqxjx   1/1     Running   0          47m
 ```
 
 For more information about how to install Operators using the CLI command, please review this [article](
@@ -221,8 +221,8 @@ kafkatopic.kafka.strimzi.io/kafkasql-journal created
 apicurioregistry.apicur.io/service-registry created
 ```
 
-A new DeploymentConfig is created with the prefix ```service-registry-deployment-``` and a new route is
-created with the prefix ```service-registry-ingres-```. We must inspect it
+A new Deployment/DeploymentConfig is created with the prefix ```service-registry-deployment-``` and a new route is
+created with the prefix ```service-registry-ingress-```. We must inspect it
 to get the route created to expose the Service Registry API.
 
 In Kubernetes we will use an ingress entry based with ```NodePort```. To get the ingress entry:
