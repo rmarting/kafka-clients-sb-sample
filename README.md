@@ -496,3 +496,4 @@ a schema declared. Congratulations!.
 * [Apicurio](https://www.apicur.io/)
 * [OperatorHub - Strimzi](https://operatorhub.io/operator/strimzi-kafka-operator)
 * [OperatorHub - Apicurio Registry](https://operatorhub.io/operator/apicurio-registry)
+* [Eclipse JKube](https://www.eclipse.org/jkube/)
