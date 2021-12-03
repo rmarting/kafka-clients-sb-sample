@@ -35,7 +35,7 @@
 		<!-- JKube -->
 		<jkube.enricher.jkube-service.type>NodePort</jkube.enricher.jkube-service.type>
 		<!-- Quarkus -->
-		<quarkus.platform.version>1.8.1.Final</quarkus.platform.version>
+		<quarkus.platform.version>1.13.7.Final</quarkus.platform.version>
 	</properties>
 
 	<!-- Quarkus BOM -->
@@ -285,7 +285,7 @@
 					<plugin>
 						<groupId>org.eclipse.jkube</groupId>
 						<artifactId>openshift-maven-plugin</artifactId>
-						<version>1.0.0</version>
+						<version>1.3.0</version>
 					</plugin>
 				</plugins>
 			</build>
@@ -297,7 +297,7 @@
 					<plugin>
 						<groupId>org.eclipse.jkube</groupId>
 						<artifactId>kubernetes-maven-plugin</artifactId>
-						<version>1.0.0</version>
+						<version>1.3.0</version>
 					</plugin>
 				</plugins>
 			</build>
