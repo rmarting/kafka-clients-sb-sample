@@ -1,5 +1,16 @@
 # Kafka Clients on Spring Boot Sample (Quarkus Edition)
 
+⚠️ **No more longer under development** ⚠️
+
+This repo is no more longer under developer as it was migrated and refactored to Quarkus.
+
+My comments about how was that migration are available in my [blog post](https://blog.jromanmartin.io/2021/12/03/lessons-learned-migrating-spring-boot-quarkus.html).
+
+The new repo is avaible [here](https://github.com/rmarting/kafka-clients-quarkus-sample).
+
+⚠️ **No more longer under development** ⚠️
+
+
 ## :rocket: :sparkles: :rotating_light: QUARKUS EDITION :rotating_light: :sparkles: :rocket:
 
 This branch is refactored to be use Spring Extensions of [Quarkus](https://quarkus.io/).
