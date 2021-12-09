@@ -1,5 +1,15 @@
 # Kafka Clients on Spring Boot Sample
 
+⚠️ **No more longer under development** ⚠️
+
+This repo is no more longer under developer as it was migrated and refactored to Quarkus.
+
+My comments about how was that migration are available in my [blog post](https://blog.jromanmartin.io/2021/12/03/lessons-learned-migrating-spring-boot-quarkus.html).
+
+The new repo is avaible [here](https://github.com/rmarting/kafka-clients-quarkus-sample).
+
+⚠️ **No more longer under development** ⚠️
+
 This sample project demonstrates how to use [Kafka Clients](https://mvnrepository.com/artifact/org.apache.kafka/kafka-clients)
 and [Spring Kafka](https://spring.io/projects/spring-kafka) on Spring Boot to send and consume messages from an
 [Apache Kafka](https://kafka.apache.org/) cluster. The Apache Kafka cluster is operated by [Strimzi](https://strimzi.io/)
