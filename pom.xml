@@ -21,7 +21,7 @@
 		<!-- Swagger -->
 		<springdoc-openapi-ui.version>1.4.3</springdoc-openapi-ui.version>
 		<!-- Avro -->
-		<avro.version>1.10.2</avro.version>
+		<avro.version>1.11.3</avro.version>
 		<!-- Apicurio Registry -->
 		<apicurio.version>2.0.1.Final</apicurio.version>
 		<!--<apicurio.registry.url>http://localhost:8080/apis/registry/v2</apicurio.registry.url>-->
