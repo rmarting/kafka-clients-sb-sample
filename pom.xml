@@ -23,7 +23,7 @@
 		<!-- Avro -->
 		<avro.version>1.10.2</avro.version>
 		<!-- Apicurio Registry -->
-		<apicurio.version>2.0.1.Final</apicurio.version>
+		<apicurio.version>2.6.13.Final</apicurio.version>
 		<!--<apicurio.registry.url>http://localhost:8080/apis/registry/v2</apicurio.registry.url>-->
 		<apicurio.registry.url>http://service-registry.amq-streams-demo.apps-crc.testing/apis/registry/v2</apicurio.registry.url>
 		<!-- JKube -->
